@@ -1,15 +1,18 @@
 # BedLink
-About Emergency aid services . Ambulance service, Nurse service and providing info about availability of beds and hospitals nearby
+
+BedLink coordinates hospital availability, emergency dispatch and hospital responses.
 
 ## Implementation status
 
-- Step 1: frontend/backend [API contract](docs/api/README.md) and fixtures.
-- Step 2: Supabase [database schema, RLS and local setup](docs/database/setup.md).
-- Step 3: authenticated hospital availability API, atomic nurse updates, idempotency, frontend client and integration tests.
-- Step 4: dispatcher [hospital matching and ranking](docs/api/matching.md), simulated travel, useful empty results and client `findMatches()`.
+- Step 1: documented API contract, OpenAPI schemas and fictional examples.
+- Step 2: Supabase PostgreSQL schema, RLS and migrations.
+- Step 3: authenticated availability API, atomic nurse updates and idempotency.
+- Step 4: hospital matching and ranking with simulated travel estimates.
+- Step 5: transactional patient requests, hospital responses, bed holds, fallback offers and timeout worker.
+- Frontend: responsive dispatcher/hospital-team experience served by the same Node API process.
 
-Start with the [Step 3 run and frontend guide](docs/api/availability.md) and [validation results](docs/api/validation-step3.md).
+See [frontend and local run guide](docs/frontend.md), [lifecycle integration guide](docs/api/lifecycle.md), and [validation record](docs/api/validation-step5.md).
 
-Node.js 24 and pnpm are required. Install with `pnpm install --frozen-lockfile`, copy `.env.example` to `.env`, set your **local** Supabase configuration, then run `pnpm start`.
+Node.js 24 and pnpm are required. Install with `pnpm install --frozen-lockfile`, configure `.env` and `web/config.js` using the [local setup instructions](docs/frontend.md), apply migrations to a local Supabase database, then run `pnpm start` and `pnpm worker` separately. The worker needs its own restricted connection.
 
-Patient request workflows, reservation transitions and timeout workers are still planned. No deployment or hosted database is included.
+This repository does not include a hosted deployment or a remote database configuration.

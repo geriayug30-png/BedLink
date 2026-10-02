@@ -257,8 +257,8 @@ test('PostgreSQL availability transactions, authorization and HTTP integration',
     assert.equal((await read(otherHospital)).body.bedPools[0].freshness, 'unverified');
     for (const expired of [false, true]) {
       const request = randomUUID(), attempt = randomUUID();
-      await db.query(`INSERT INTO public.patient_requests(id,owner_id,patient_reference,latitude,longitude,resources,status)
-        VALUES ($1,$2,'test-anonymous',20,70,ARRAY['icu']::public.bed_resource[],'held')`, [request,dispatcher]);
+      await db.query(`INSERT INTO public.patient_requests(id,owner_id,patient_reference,latitude,longitude,resources,status,created_at,updated_at)
+        VALUES ($1,$2,'test-anonymous',20,70,ARRAY['icu']::public.bed_resource[],'held',now()-interval '10 minutes',now()-interval '9 minutes')`, [request,dispatcher]);
       await db.query(`INSERT INTO public.hospital_attempts(id,request_id,hospital_id,bed_pool_id,status,created_at,response_deadline_at,resolved_at)
         VALUES ($1,$2,$3,$4,'accepted',now()-interval '10 minutes',now()-interval '8 minutes',now()-interval '9 minutes')`,
       [attempt,request,hospital,poolId]);

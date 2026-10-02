@@ -1,5 +1,7 @@
 # BedLink frontend handoff
 
+The working responsive application is described in the [frontend run guide](../frontend.md); lifecycle helpers and retry rules are in [Step 5](lifecycle.md).
+
 This is the Step 1 contract, version 1.0.0. It is framework independent and describes a future REST API; it does not imply a running service. Start with [openapi.yaml](openapi.yaml), use [examples/README.md](examples/README.md) for mock flows, and read [decisions.md](decisions.md) for the business rules. Validation evidence is in [validation.md](validation.md).
 
 ## Connect and authenticate

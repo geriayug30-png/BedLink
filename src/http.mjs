@@ -18,7 +18,7 @@ export function jsonBody(limit) {
 }
 
 export function sendResult(res, result) {
-  for (const name of ['Idempotency-Replayed', 'Idempotency-Expires-At', 'Retry-After']) {
+  for (const name of ['Idempotency-Replayed', 'Idempotency-Expires-At', 'Retry-After', 'Location']) {
     const value = result.headers?.[name];
     if (typeof value === 'string' && !/[\r\n]/.test(value)) res.set(name, value);
   }

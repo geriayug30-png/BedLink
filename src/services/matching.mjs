@@ -15,7 +15,7 @@ export function roundScore(value, places) {
   return Number(`${Math.round(Number(`${coefficient}e${Number(exponent) + places}`))}e-${places}`);
 }
 
-async function travelEstimates(hospitals, needs, provider, policy, signal, timeoutMs) {
+export async function travelEstimates(hospitals, needs, provider, policy, signal, timeoutMs) {
   if (!hospitals.length) return [];
   const timeout = new AbortController();
   const combined = signal ? AbortSignal.any([signal, timeout.signal]) : timeout.signal;

@@ -1,15 +1,16 @@
 {
   "name": "bedlink-api",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "engines": { "node": ">=24 <25" },
   "scripts": {
     "start": "node --env-file=.env src/server.mjs",
-    "test": "node --test --test-isolation=none test/unit.test.mjs test/client.test.mjs test/matching.test.mjs",
-    "test:db": "node --env-file-if-exists=.env.test --test --test-isolation=none test/database.test.mjs",
+    "worker": "node --env-file=.env src/worker.mjs",
+    "test": "node --test --test-isolation=none test/unit.test.mjs test/client.test.mjs test/matching.test.mjs test/workflow.test.mjs test/frontend.test.mjs",
+    "test:db": "node --env-file-if-exists=.env.test --test --test-isolation=none test/database.test.mjs test/lifecycle-database.test.mjs",
     "test:contract": "node scripts/check-contract.mjs"
   },
-  "dependencies": { "express": "5.2.1" },
-  "devDependencies": { "pg": "8.23.1", "ajv": "8.20.0", "ajv-formats": "3.0.1", "yaml": "2.9.1" }
+  "dependencies": { "express": "5.2.1", "pg": "8.23.1" },
+  "devDependencies": { "ajv": "8.20.0", "ajv-formats": "3.0.1", "yaml": "2.9.1" }
 }

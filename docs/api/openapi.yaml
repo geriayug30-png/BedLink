@@ -2,12 +2,8 @@ openapi: 3.1.0
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: BedLink API contract
-  version: 1.2.0
-  description: Step 1 contract with Step 3 availability and Step 4 matching implementations; workflow operations remain planned. JSON uses camelCase. REST with Supabase Auth bearer
-    access tokens. Server time and inventory are authoritative. Read decisions.md and frontend-handoff.md for normative
-    cross-resource invariants, ranking, idempotency and lifecycle rules. No patient names or clinical notes. Unknown
-    input fields/queries are 400. All bodies are application/json; every response includes serverTime. All timestamps
-    end in Z. API deployment URL remains configurable.
+  version: 1.3.0
+  description: "Contract implemented through Steps 1–5: authenticated availability, matching, patient requests, hospital responses, holds and fallback. The same-origin responsive frontend is documented in docs/frontend.md. JSON uses camelCase. REST with Supabase Auth bearer access tokens. Server time and inventory are authoritative. Read decisions.md and frontend-handoff.md for normative cross-resource invariants, ranking, idempotency and lifecycle rules. No patient names or clinical notes. Unknown input fields/queries are 400. All bodies are application/json; every response includes serverTime. All timestamps end in Z. API deployment URL remains configurable."
 servers:
 - url: /api/v1
   description: Relative base path on the configured API origin; no live service implied.

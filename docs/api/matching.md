@@ -123,7 +123,7 @@ Freshness thresholds remain the Step 3 database policy (10/30 minutes). They are
 
 ## Contract and validation
 
-OpenAPI is now contract version **1.2.0**. The existing `/matches` request, result, candidate and diagnostic schemas are unchanged. Only its implementation description, travel-failure behavior and 413 response were added. There are still 14 documented operations and 43 schemas; future workflow operations remain planned.
+OpenAPI is now contract version **1.3.0**. The existing `/matches` request, result, candidate and diagnostic schemas are unchanged. Only its implementation description, travel-failure behavior and 413 response were added. There are still 14 documented operations and 43 schemas; the original request and response workflow operations are implemented in [Step 5](lifecycle.md).
 
 Run:
 

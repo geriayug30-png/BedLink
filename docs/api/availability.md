@@ -1,6 +1,6 @@
 # Step 3: availability API and frontend integration
 
-Step 4 now also implements [dispatcher matching](matching.md). The availability behavior and setup below remain applicable; apply the fourth migration when setting up the current API.
+Step 4 implements [dispatcher matching](matching.md), Step 5 implements the [request lifecycle](lifecycle.md), and the [web frontend](../frontend.md) provides dispatcher and hospital-team screens. The availability behavior and setup below remain applicable; apply the fourth migration when setting up the current API.
 
 Implemented routes (base URL includes `/api/v1`):
 

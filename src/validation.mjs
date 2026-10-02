@@ -40,3 +40,28 @@ export function mutation(body, key) {
   return { p_operation: body.operation, p_reported_free_beds: body.reportedFreeBeds,
     p_version: body.version, p_idempotency_key: key };
 }
+
+export function workflowInput(action, params, body, key) {
+  const normalized = Object.fromEntries(Object.entries(params).map(([k,v]) => [k, resourceId(v)]));
+  if (['status','inbox'].includes(action)) return normalized;
+  if (!key) throw new ApiError(400, 'IDEMPOTENCY_KEY_REQUIRED', 'Idempotency-Key is required.');
+  if (!/^[A-Za-z0-9._:-]{8,128}$/.test(key)) throw invalid('Invalid Idempotency-Key.');
+  const fields = { create:['patientReference','needs'],send:['hospitalId','bedPoolId'],accept:[],reject:['reasonCode'],
+    arrival:['holdId'],cancelRequest:['reasonCode'],cancelHold:['reasonCode'] }[action];
+  if (!object(body) || !fields || Object.keys(body).length !== fields.length || fields.some(f => !Object.hasOwn(body,f))) throw invalid('Invalid request body.');
+  if (action === 'create') {
+    if (typeof body.patientReference !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(body.patientReference)) throw invalid('Invalid anonymous reference.');
+    normalized.body = { patientReference: body.patientReference, needs: matchSearch({needs:body.needs}) };
+  } else if (action === 'send' || action === 'arrival') {
+    normalized.body = {};
+    for (const field of fields) {
+      if (typeof body[field] !== 'string' || body[field].length < 1 || body[field].length > 128) throw invalid('Invalid resource ID.');
+      normalized.body[field] = resourceId(body[field]);
+    }
+  } else {
+    const reasons = { reject:['cannotReceive','capacityChanged','other'],cancelRequest:['noLongerNeeded','duplicate','other'],cancelHold:['transportPlanChanged','other'] }[action];
+    if (reasons && !reasons.includes(body.reasonCode)) throw invalid('Invalid reason code.');
+    normalized.body = { ...body };
+  }
+  return normalized;
+}

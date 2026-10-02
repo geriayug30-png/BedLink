@@ -7,11 +7,17 @@ import { noQuery } from './validation.mjs';
 import { authenticatedRequest } from './http.mjs';
 import { matchingRouter } from './routes/matching.mjs';
 import { createMatchingService } from './services/matching.mjs';
+import { workflowRouter } from './routes/workflow.mjs';
+import { unavailable } from './errors.mjs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
-export function createApp({ config, authenticate, rpc, travelProvider, clock, logger = event => console.log(JSON.stringify(event)) }) {
+export function createApp({ config, authenticate, rpc, travelProvider, clock, workflow, logger = event => console.log(JSON.stringify(event)) }) {
   const app = express();
   app.disable('x-powered-by');
   app.disable('etag');
+  app.use('/client', express.static(path.resolve(fileURLToPath(new URL('../client', import.meta.url))), { fallthrough: false, maxAge: 0 }));
+  app.use(express.static(path.resolve(fileURLToPath(new URL('../web', import.meta.url))), { index: 'index.html', maxAge: 0 }));
   app.use((req, res, next) => {
     const started = performance.now();
     req.requestId = randomUUID();
@@ -33,7 +39,7 @@ export function createApp({ config, authenticate, rpc, travelProvider, clock, lo
     res.vary('Origin');
     if (origin && !config.origins.includes(origin)) throw new ApiError(403, 'FORBIDDEN', 'Origin is not allowed.');
     if (origin) res.set({ 'Access-Control-Allow-Origin': origin,
-      'Access-Control-Expose-Headers': 'Date, X-Request-Id, Idempotency-Replayed, Idempotency-Expires-At, Retry-After' });
+      'Access-Control-Expose-Headers': 'Date, Location, X-Request-Id, Idempotency-Replayed, Idempotency-Expires-At, Retry-After' });
     if (req.method === 'OPTIONS') {
       res.set({ 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Authorization, Content-Type, Idempotency-Key' });
@@ -50,6 +56,7 @@ export function createApp({ config, authenticate, rpc, travelProvider, clock, lo
     service: createAvailabilityService(rpc), jsonLimit: config.jsonLimit }));
   app.use('/api/v1', matchingRouter({ jsonLimit: config.jsonLimit,
     service: createMatchingService({ rpc, travelProvider, clock, policy: config.matchingPolicy, travelTimeoutMs: config.travelTimeoutMs }) }));
+  app.use('/api/v1', workflowRouter({ jsonLimit: config.jsonLimit, service: workflow || (async () => { throw unavailable(); }) }));
   app.use((req, res, next) => next(new ApiError(404, 'NOT_FOUND', 'Route not found.')));
   app.use((error, req, res, next) => {
     if (req.bedlinkSignal?.aborted || res.headersSent) return res.destroy();
