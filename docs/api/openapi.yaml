@@ -2,8 +2,8 @@ openapi: 3.1.0
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: BedLink API contract
-  version: 1.1.0
-  description: Step 1 contract with Step 3 availability implementation; workflow operations remain planned. JSON uses camelCase. REST with Supabase Auth bearer
+  version: 1.2.0
+  description: Step 1 contract with Step 3 availability and Step 4 matching implementations; workflow operations remain planned. JSON uses camelCase. REST with Supabase Auth bearer
     access tokens. Server time and inventory are authoritative. Read decisions.md and frontend-handoff.md for normative
     cross-resource invariants, ranking, idempotency and lifecycle rules. No patient names or clinical notes. Unknown
     input fields/queries are 400. All bodies are application/json; every response includes serverTime. All timestamps
@@ -261,7 +261,7 @@ paths:
       - Dispatch
       description: 'Read-only search; no Idempotency-Key needed. No capacity is reserved. All empty result conditions
         return 200 with distinct result.outcome. Server policy and score components explain ordering. Authorization:
-        Dispatcher role required; no request record is created or read. All errors use ErrorResponse.'
+        Dispatcher role required; no request record is created or read. Any unavailable or invalid travel estimate fails the search with 503 SERVICE_UNAVAILABLE, with no partial candidates or diagnostics. All errors use ErrorResponse.'
       security:
       - bearerAuth: []
       x-roles:
@@ -306,6 +306,12 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+        '413':
+          description: JSON body exceeds the configured request-size limit. Error code INVALID_INPUT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
       requestBody:

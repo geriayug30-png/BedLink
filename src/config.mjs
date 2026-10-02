@@ -1,3 +1,5 @@
+import { readMatchingPolicy } from './matching-policy.mjs';
+
 export function readConfig(env = process.env) {
   const integer = (name, fallback, min, max) => {
     const value = env[name] === undefined ? fallback : Number(env[name]);
@@ -24,5 +26,6 @@ export function readConfig(env = process.env) {
   return { supabaseUrl: url.origin, publishableKey: key, origins,
     port: integer('PORT', 3000, 1, 65535), host: env.HOST || '127.0.0.1',
     jsonLimit: integer('JSON_LIMIT_BYTES', 16384, 1024, 1048576),
-    timeoutMs: integer('UPSTREAM_TIMEOUT_MS', 10000, 100, 60000) };
+    timeoutMs: integer('UPSTREAM_TIMEOUT_MS', 10000, 100, 60000),
+    matchingPolicy: readMatchingPolicy(env), travelTimeoutMs: integer('MATCH_TRAVEL_TIMEOUT_MS', 5000, 1, 60000) };
 }

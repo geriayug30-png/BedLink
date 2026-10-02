@@ -1,5 +1,7 @@
 # Step 3: availability API and frontend integration
 
+Step 4 now also implements [dispatcher matching](matching.md). The availability behavior and setup below remain applicable; apply the fourth migration when setting up the current API.
+
 Implemented routes (base URL includes `/api/v1`):
 
 | Method/path | Access | Result |

@@ -21,12 +21,12 @@ export function createBedLinkApi({ baseUrl, getAccessToken, fetchImpl = globalTh
       if (!token) throw new BedLinkApiError('Sign in before making a request.', { code: 'UNAUTHENTICATED', status: 401 });
       response = await fetchImpl(`${root}${path}`, {
         method, signal, headers: { Authorization: `Bearer ${token}`,
-          ...(body ? { 'Content-Type': 'application/json', 'Idempotency-Key': key } : {}) },
+          ...(body ? { 'Content-Type': 'application/json' } : {}), ...(key ? { 'Idempotency-Key': key } : {}) },
         ...(body ? { body } : {}),
       });
     } catch (error) {
       if (signal?.aborted || error.name === 'AbortError' || error instanceof BedLinkApiError) throw error;
-      throw new BedLinkApiError('Request failed; the save outcome may be unknown.', { code: 'NETWORK_ERROR' });
+      throw new BedLinkApiError(key ? 'Request failed; the save outcome may be unknown.' : 'Request failed. Try again when connected.', { code: 'NETWORK_ERROR' });
     }
     const requestId = response.headers.get('X-Request-Id');
     let data;
@@ -47,6 +47,7 @@ export function createBedLinkApi({ baseUrl, getAccessToken, fetchImpl = globalTh
       body: JSON.stringify({ operation, reportedFreeBeds, version }) });
   };
   return {
+    findMatches: (needs, { signal } = {}) => request('/matches', { method: 'POST', body: JSON.stringify({ needs }), signal }),
     listHospitals: ({ signal } = {}) => request('/hospitals', { signal }),
     listBedPools: (hospitalId, { signal } = {}) => request(path(hospitalId), { signal }),
     updateCount: (hospitalId, poolId, intent) => save('update', hospitalId, poolId, intent),

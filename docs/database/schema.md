@@ -1,3 +1,7 @@
+# Step 4 matching addition
+
+Migration `20261002000400_matching_catalog.sql` adds `bedlink_read_matching_catalog()`: an authenticated-only, dispatcher-authorized wrapper around the Step 3 inventory snapshot. It holds the checked membership stable for the short database transaction and returns no patient rows. Travel and ranking run after the transaction completes. See [matching.md](../api/matching.md). Existing migrations, table grants and RLS policies are unchanged.
+
 # Step 3 availability addition
 
 Migration `20261002000300_availability_api.sql` adds authenticated catalog RPCs and atomic nurse availability updates with version checks and idempotency. Existing tables, migrations and direct-table RLS policies remain unchanged. See [the availability guide](../api/availability.md) for the catalog projection's authorization, transaction locking and remaining workflow responsibilities. The Step 2 design notes below are preserved as the schema baseline.

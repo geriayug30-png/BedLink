@@ -206,6 +206,6 @@ reject('MatchResult',{**loaded['01-success/02-matches']['result'],'candidates':[
 reject('BedPool',{**win['bedPool'],'freshness':'unverified'})
 reject('TravelEstimate',{'distanceKm':1,'estimatedTravelMinutes':2,'source':'simulatedDistance','trafficConsidered':True})
 
-result={'openapiVersion':spec['openapi'],'operationCount':len(operation_ids),'schemaCount':len(spec['components']['schemas']),'exchanges':len(manifest),'payloadsValidated':payload_count,'negativeSchemaCases':negative,'semanticAndStructuralAssertions':checks,'validators':{p:version(p) for p in ['openapi-spec-validator','jsonschema','PyYAML']},'limitations':['This checker validates contract fixtures only; run the separate Step 3 HTTP and PostgreSQL suites for implementation checks.','Cross-field business rules were checked against the static fixtures; JSON Schema alone does not prove them.']}
+result={'openapiVersion':spec['openapi'],'operationCount':len(operation_ids),'schemaCount':len(spec['components']['schemas']),'exchanges':len(manifest),'payloadsValidated':payload_count,'negativeSchemaCases':negative,'semanticAndStructuralAssertions':checks,'validators':{p:version(p) for p in ['openapi-spec-validator','jsonschema','PyYAML']},'limitations':['This checker validates contract fixtures only; run the HTTP, matching and PostgreSQL suites for implementation checks.','Cross-field business rules were checked against the static fixtures; JSON Schema alone does not prove them.']}
 
 print(json.dumps(result,indent=2))

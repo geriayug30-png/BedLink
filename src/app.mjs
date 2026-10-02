@@ -4,8 +4,11 @@ import { ApiError, errorBody } from './errors.mjs';
 import { createAvailabilityService } from './services/availability.mjs';
 import { availabilityRouter } from './routes/availability.mjs';
 import { noQuery } from './validation.mjs';
+import { authenticatedRequest } from './http.mjs';
+import { matchingRouter } from './routes/matching.mjs';
+import { createMatchingService } from './services/matching.mjs';
 
-export function createApp({ config, authenticate, rpc, logger = event => console.log(JSON.stringify(event)) }) {
+export function createApp({ config, authenticate, rpc, travelProvider, clock, logger = event => console.log(JSON.stringify(event)) }) {
   const app = express();
   app.disable('x-powered-by');
   app.disable('etag');
@@ -32,7 +35,7 @@ export function createApp({ config, authenticate, rpc, logger = event => console
     if (origin) res.set({ 'Access-Control-Allow-Origin': origin,
       'Access-Control-Expose-Headers': 'Date, X-Request-Id, Idempotency-Replayed, Idempotency-Expires-At, Retry-After' });
     if (req.method === 'OPTIONS') {
-      res.set({ 'Access-Control-Allow-Methods': 'GET, PATCH, OPTIONS',
+      res.set({ 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Authorization, Content-Type, Idempotency-Key' });
       return res.sendStatus(204);
     }
@@ -42,8 +45,11 @@ export function createApp({ config, authenticate, rpc, logger = event => console
     noQuery(req);
     res.json({ status: 'ok', serverTime: new Date().toISOString() });
   });
-  app.use('/api/v1', availabilityRouter({ authenticate,
+  app.use('/api/v1', authenticatedRequest(authenticate));
+  app.use('/api/v1', availabilityRouter({
     service: createAvailabilityService(rpc), jsonLimit: config.jsonLimit }));
+  app.use('/api/v1', matchingRouter({ jsonLimit: config.jsonLimit,
+    service: createMatchingService({ rpc, travelProvider, clock, policy: config.matchingPolicy, travelTimeoutMs: config.travelTimeoutMs }) }));
   app.use((req, res, next) => next(new ApiError(404, 'NOT_FOUND', 'Route not found.')));
   app.use((error, req, res, next) => {
     if (req.bedlinkSignal?.aborted || res.headersSent) return res.destroy();

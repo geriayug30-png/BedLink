@@ -28,6 +28,9 @@ async function beginAs(client, actor, tokenIssuer = issuer) {
   await client.query("SELECT set_config('request.jwt.claims',$1,true)", [JSON.stringify({ sub: actor, iss: tokenIssuer, role: 'authenticated' })]);
 }
 async function invoke(client, name, args) {
+  if (name === 'bedlink_read_matching_catalog') {
+    return (await client.query('SELECT public.bedlink_read_matching_catalog() AS result')).rows[0].result;
+  }
   if (name === 'bedlink_read_availability') {
     return (await client.query('SELECT public.bedlink_read_availability($1) AS result', [args.p_hospital_id])).rows[0].result;
   }
@@ -82,7 +85,21 @@ test('PostgreSQL availability transactions, authorization and HTTP integration',
     await db.query('COMMIT');
     fixturesReady = true;
   } catch (error) { await db.query('ROLLBACK'); throw error; }
+  let travelProbe = Promise.resolve();
   const base = await serve(t, createApp({ config, logger: () => {},
+    travelProvider: { estimate: async () => {
+      // A separate connection must be able to lock membership: the snapshot RPC
+      // and its authorization lock must have finished BEFORE invoking travel.
+      // Serialize probes so concurrent provider calls do not lock against each other.
+      await (travelProbe = travelProbe.then(async () => {
+        const probe = await db.connect();
+        try {
+          await probe.query('BEGIN');
+          await probe.query('SELECT user_id FROM public.staff_memberships WHERE user_id=$1 FOR UPDATE NOWAIT', [dispatcher]);
+        } finally { await probe.query('ROLLBACK'); probe.release(); }
+      }));
+      return { distanceKm: 1, estimatedTravelMinutes: 3, source: 'simulatedDistance', trafficConsidered: false };
+    } },
     authenticate: async header => {
       const actor = header?.replace('Bearer ', '');
       if (![nurse,secondNurse,dispatcher,inactive].includes(actor)) throw unauthenticated();
@@ -279,5 +296,60 @@ test('PostgreSQL availability transactions, authorization and HTTP integration',
       await db.query(`DROP TRIGGER ${trigger} ON bedlink_private.idempotency_records`);
       await db.query(`DROP FUNCTION public.${trigger}()`);
     }
+  });
+
+  await t.test('matching RPC authorizes dispatchers, denies nurses/inactive/anonymous and preserves RLS', async () => {
+    const fetchCatalog = actor => rpc('bedlink_read_matching_catalog', {}, actor);
+    const authorized = await fetchCatalog(dispatcher);
+    assert.equal(authorized.status, 200);
+    matchesSchema('HospitalsResponse', authorized.body);
+    for (const actor of [nurse, inactive, randomUUID()]) {
+      const denied = await fetchCatalog(actor);
+      assert.equal(denied.status, 403);
+      assert.equal(denied.body.hospitals, undefined);
+      assert.equal(denied.body.diagnostics, undefined);
+    }
+    assert.equal((await fetchCatalog(null)).status, 401);
+    await db.query('UPDATE public.staff_memberships SET is_active=false WHERE user_id=$1', [dispatcher]);
+    try { assert.equal((await fetchCatalog(dispatcher)).status, 403); }
+    finally { await db.query('UPDATE public.staff_memberships SET is_active=true WHERE user_id=$1', [dispatcher]); }
+    const permissions = (await db.query(`SELECT
+      has_function_privilege('anon','public.bedlink_read_matching_catalog()','execute') AS anon,
+      has_function_privilege('authenticated','public.bedlink_read_matching_catalog()','execute') AS authenticated,
+      has_table_privilege('authenticated','public.bed_pools','UPDATE') AS direct_update,
+      (SELECT bool_and(relrowsecurity) FROM pg_class WHERE oid IN ('public.hospitals'::regclass,'public.bed_pools'::regclass,'public.holds'::regclass)) AS rls`)).rows[0];
+    assert.deepEqual(permissions, { anon:false, authenticated:true, direct_update:false, rls:true });
+  });
+
+  await t.test('HTTP matching uses real unexpired holds, commits before travel and performs no inventory/workflow writes', async () => {
+    const search = actor => fetch(`${base}/matches`, { method: 'POST',
+      headers: { Authorization: `Bearer ${actor}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ needs: { location:{latitude:20,longitude:70}, resources:['icu'] } }),
+    });
+    assert.equal((await search(nurse)).status, 403);
+    const full = await search(dispatcher);
+    assert.equal(full.status, 200);
+    assert.ok(!(await full.json()).result.candidates.some(c => c.bedPool.id === poolId)); // F=1, H=1
+    const updated = await save(argsFor((await current()).version, 2));
+    assert.equal(updated.status, 200);
+    const before = await current();
+    const counts = async () => (await db.query(`SELECT (SELECT count(*) FROM public.patient_requests) AS requests,
+      (SELECT count(*) FROM public.hospital_attempts) AS attempts,(SELECT count(*) FROM public.holds) AS holds,
+      (SELECT count(*) FROM bedlink_private.idempotency_records) AS replays`)).rows[0];
+    const beforeCounts = await counts();
+    const response = await search(dispatcher), body = await response.json();
+    assert.equal(response.status, 200);
+    matchesSchema('MatchesResponse', body);
+    const selected = body.result.candidates.find(c => c.bedPool.id === poolId);
+    assert.ok(selected);
+    assert.equal(selected.bedPool.activeHoldCount, 1); // expired but still active row is not counted
+    assert.equal(selected.bedPool.availableBeds, 1);
+    assert.equal(selected.bedPool.verifiedAt, before.verifiedAt);
+    assert.equal(selected.bedPool.version, before.version);
+    assert.equal(selected.bedPool.dataAgeMinutes, (Date.parse(body.serverTime)-Date.parse(before.verifiedAt))/60000);
+    const after = await current();
+    assert.equal(after.version, before.version); assert.equal(after.inventoryUpdatedAt, before.inventoryUpdatedAt);
+    assert.equal(after.verifiedAt, before.verifiedAt);
+    assert.deepEqual(await counts(), beforeCounts);
   });
 });

@@ -1,6 +1,6 @@
-# Step 3 implementation
+# Implementation through Step 4
 
-The hospital availability API and frontend client are now implemented. See [local setup and integration](availability.md) and [Step 3 validation](validation-step3.md). The original Step 1 design material below still describes the full planned workflow; only the three availability operations and public health endpoint are currently implemented.
+The hospital availability API, dispatcher matching and frontend client are implemented. See [local setup](availability.md), [matching integration](matching.md), and [Step 4 validation](validation-step4.md). The original Step 1 design material below describes the full planned workflow; the three availability operations, matching and public health endpoint are currently implemented.
 
 # BedLink API contract — Step 1
 
