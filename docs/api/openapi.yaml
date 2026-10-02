@@ -2,8 +2,8 @@ openapi: 3.1.0
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: BedLink API contract
-  version: 1.0.0
-  description: Step 1 design contract; no backend implementation. JSON uses camelCase. REST with Supabase Auth bearer
+  version: 1.1.0
+  description: Step 1 contract with Step 3 availability implementation; workflow operations remain planned. JSON uses camelCase. REST with Supabase Auth bearer
     access tokens. Server time and inventory are authoritative. Read decisions.md and frontend-handoff.md for normative
     cross-resource invariants, ranking, idempotency and lifecycle rules. No patient names or clinical notes. Unknown
     input fields/queries are 400. All bodies are application/json; every response includes serverTime. All timestamps
@@ -19,6 +19,31 @@ tags:
 - name: Dispatch
   description: Matching and request lifecycle.
 paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Public process liveness
+      description: Step 3 addition. Does not check database readiness or expose configuration.
+      security: []
+      parameters: []
+      responses:
+        '200':
+          description: API process is serving requests.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+            X-Request-Id:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /hospitals:
     get:
       operationId: listHospitals
@@ -199,6 +224,12 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '404':
           $ref: '#/components/responses/NotFound'
+        '413':
+          description: JSON body exceeds the configured request-size limit. Error code INVALID_INPUT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
         '409':
@@ -1274,6 +1305,14 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status, serverTime]
+      properties:
+        status: {type: string, const: ok}
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
     Id:
       type: string
       minLength: 1

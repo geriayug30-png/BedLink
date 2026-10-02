@@ -1,3 +1,7 @@
+# Step 3 availability addition
+
+Migration `20261002000300_availability_api.sql` adds authenticated catalog RPCs and atomic nurse availability updates with version checks and idempotency. Existing tables, migrations and direct-table RLS policies remain unchanged. See [the availability guide](../api/availability.md) for the catalog projection's authorization, transaction locking and remaining workflow responsibilities. The Step 2 design notes below are preserved as the schema baseline.
+
 # BedLink database schema — Step 2
 
 This schema implements storage, structural constraints and database access boundaries for the [Step 1 API contract](../api/openapi.yaml). It does **not** implement API routes, matching/ranking, census updates, acceptance, timeout settlement, arrival or cancellation workflows. Browser writes remain closed until those operations exist as audited transactions.
