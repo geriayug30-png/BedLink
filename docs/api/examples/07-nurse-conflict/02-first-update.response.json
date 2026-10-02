@@ -1,0 +1,31 @@
+{
+  "serverTime": "2026-10-02T10:00:10Z",
+  "bedPool": {
+    "id": "p_cedar_critical",
+    "hospitalId": "h_demo_cedar",
+    "label": "ICU + Ventilator + Oxygen",
+    "resources": [
+      "icu",
+      "ventilator",
+      "oxygen"
+    ],
+    "specialties": [
+      "cardiac"
+    ],
+    "capacity": 10,
+    "reportedFreeBeds": 3,
+    "activeHoldCount": 0,
+    "availableBeds": 3,
+    "loadRatio": 0.7,
+    "verifiedAt": "2026-10-02T10:00:10Z",
+    "dataAgeMinutes": 0.0,
+    "freshness": "fresh",
+    "freshnessPolicy": {
+      "policyVersion": "demo-1",
+      "agingAfterMinutes": 10,
+      "staleAfterMinutes": 30
+    },
+    "inventoryUpdatedAt": "2026-10-02T10:00:10Z",
+    "version": 2
+  }
+}

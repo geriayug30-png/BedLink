@@ -1,0 +1,28 @@
+{
+  "serverTime": "2026-10-02T10:00:00Z",
+  "result": {
+    "outcome": "noEligibleHospitals",
+    "candidates": [],
+    "diagnostics": {
+      "excludedHospitalIds": [],
+      "compatiblePoolCount": 0,
+      "freshPoolCount": 0,
+      "stalePoolCount": 0,
+      "unverifiedPoolCount": 0,
+      "freshAvailablePoolCount": 0
+    },
+    "policy": {
+      "policyVersion": "demo-1",
+      "responseDeadlineSeconds": 120,
+      "holdDurationSeconds": 900,
+      "agingAfterMinutes": 10,
+      "staleAfterMinutes": 30,
+      "travelWeight": 0.5,
+      "freshnessWeight": 0.3,
+      "headroomWeight": 0.2,
+      "travelScoreHorizonMinutes": 60,
+      "simulatedSpeedKph": 30,
+      "simulatedRoadFactor": 1.3
+    }
+  }
+}

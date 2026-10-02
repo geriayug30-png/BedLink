@@ -1,0 +1,160 @@
+{
+  "serverTime": "2026-10-02T10:00:05Z",
+  "request": {
+    "id": "req_success",
+    "patientReference": "ANON_SUCCESS",
+    "ownerId": "dispatch_demo_a",
+    "needs": {
+      "location": {
+        "latitude": 12.97,
+        "longitude": 77.6
+      },
+      "resources": [
+        "icu",
+        "ventilator",
+        "oxygen"
+      ],
+      "specialty": "cardiac"
+    },
+    "status": "searching",
+    "createdAt": "2026-10-02T10:00:05Z",
+    "updatedAt": "2026-10-02T10:00:05Z",
+    "activeAttemptId": null,
+    "activeHoldId": null,
+    "cancellationReason": null
+  },
+  "attempts": [],
+  "holds": [],
+  "activeHold": null,
+  "nextBest": {
+    "outcome": "matchesFound",
+    "candidates": [
+      {
+        "rank": 1,
+        "hospital": {
+          "id": "h_demo_cedar",
+          "name": "Cedar Demo Hospital",
+          "location": {
+            "latitude": 12.975,
+            "longitude": 77.605
+          }
+        },
+        "bedPool": {
+          "id": "p_cedar_critical",
+          "hospitalId": "h_demo_cedar",
+          "label": "ICU + Ventilator + Oxygen",
+          "resources": [
+            "icu",
+            "ventilator",
+            "oxygen"
+          ],
+          "specialties": [
+            "cardiac"
+          ],
+          "capacity": 10,
+          "reportedFreeBeds": 2,
+          "activeHoldCount": 0,
+          "availableBeds": 2,
+          "loadRatio": 0.8,
+          "verifiedAt": "2026-10-02T09:59:00Z",
+          "dataAgeMinutes": 1.0833333333333333,
+          "freshness": "fresh",
+          "freshnessPolicy": {
+            "policyVersion": "demo-1",
+            "agingAfterMinutes": 10,
+            "staleAfterMinutes": 30
+          },
+          "inventoryUpdatedAt": "2026-10-02T09:59:00Z",
+          "version": 1
+        },
+        "matchesAllRequirements": true,
+        "travel": {
+          "distanceKm": 0.8,
+          "estimatedTravelMinutes": 3,
+          "source": "simulatedDistance",
+          "trafficConsidered": false
+        },
+        "score": 80.42,
+        "scoreBreakdown": {
+          "travelScore": 95.0,
+          "freshnessScore": 96.3889,
+          "headroomScore": 20.0
+        }
+      },
+      {
+        "rank": 2,
+        "hospital": {
+          "id": "h_demo_lotus",
+          "name": "Lotus Demo Medical Centre",
+          "location": {
+            "latitude": 12.99,
+            "longitude": 77.62
+          }
+        },
+        "bedPool": {
+          "id": "p_lotus_critical",
+          "hospitalId": "h_demo_lotus",
+          "label": "ICU + Ventilator + Oxygen",
+          "resources": [
+            "icu",
+            "ventilator",
+            "oxygen"
+          ],
+          "specialties": [
+            "cardiac",
+            "burns"
+          ],
+          "capacity": 12,
+          "reportedFreeBeds": 3,
+          "activeHoldCount": 0,
+          "availableBeds": 3,
+          "loadRatio": 0.75,
+          "verifiedAt": "2026-10-02T09:57:00Z",
+          "dataAgeMinutes": 3.0833333333333335,
+          "freshness": "fresh",
+          "freshnessPolicy": {
+            "policyVersion": "demo-1",
+            "agingAfterMinutes": 10,
+            "staleAfterMinutes": 30
+          },
+          "inventoryUpdatedAt": "2026-10-02T09:57:00Z",
+          "version": 1
+        },
+        "matchesAllRequirements": true,
+        "travel": {
+          "distanceKm": 3.1,
+          "estimatedTravelMinutes": 9,
+          "source": "simulatedDistance",
+          "trafficConsidered": false
+        },
+        "score": 74.42,
+        "scoreBreakdown": {
+          "travelScore": 85.0,
+          "freshnessScore": 89.7222,
+          "headroomScore": 25.0
+        }
+      }
+    ],
+    "diagnostics": {
+      "excludedHospitalIds": [],
+      "compatiblePoolCount": 2,
+      "freshPoolCount": 2,
+      "stalePoolCount": 0,
+      "unverifiedPoolCount": 0,
+      "freshAvailablePoolCount": 2
+    },
+    "policy": {
+      "policyVersion": "demo-1",
+      "responseDeadlineSeconds": 120,
+      "holdDurationSeconds": 900,
+      "agingAfterMinutes": 10,
+      "staleAfterMinutes": 30,
+      "travelWeight": 0.5,
+      "freshnessWeight": 0.3,
+      "headroomWeight": 0.2,
+      "travelScoreHorizonMinutes": 60,
+      "simulatedSpeedKph": 30,
+      "simulatedRoadFactor": 1.3
+    }
+  }
+}

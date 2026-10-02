@@ -1,0 +1,122 @@
+{
+  "serverTime": "2026-10-02T10:02:10Z",
+  "request": {
+    "id": "req_timeout",
+    "patientReference": "ANON_TIMEOUT",
+    "ownerId": "dispatch_demo_a",
+    "needs": {
+      "location": {
+        "latitude": 12.97,
+        "longitude": 77.6
+      },
+      "resources": [
+        "icu",
+        "ventilator",
+        "oxygen"
+      ],
+      "specialty": "cardiac"
+    },
+    "status": "searching",
+    "createdAt": "2026-10-02T10:00:05Z",
+    "updatedAt": "2026-10-02T10:02:10Z",
+    "activeAttemptId": null,
+    "activeHoldId": null,
+    "cancellationReason": null
+  },
+  "attempts": [
+    {
+      "id": "att_timeout",
+      "requestId": "req_timeout",
+      "hospitalId": "h_demo_cedar",
+      "bedPoolId": "p_cedar_critical",
+      "status": "timedOut",
+      "createdAt": "2026-10-02T10:00:10Z",
+      "responseDeadlineAt": "2026-10-02T10:02:10Z",
+      "resolvedAt": "2026-10-02T10:02:10Z",
+      "reasonCode": "responseTimeout"
+    }
+  ],
+  "holds": [],
+  "activeHold": null,
+  "nextBest": {
+    "outcome": "matchesFound",
+    "candidates": [
+      {
+        "rank": 1,
+        "hospital": {
+          "id": "h_demo_lotus",
+          "name": "Lotus Demo Medical Centre",
+          "location": {
+            "latitude": 12.99,
+            "longitude": 77.62
+          }
+        },
+        "bedPool": {
+          "id": "p_lotus_critical",
+          "hospitalId": "h_demo_lotus",
+          "label": "ICU + Ventilator + Oxygen",
+          "resources": [
+            "icu",
+            "ventilator",
+            "oxygen"
+          ],
+          "specialties": [
+            "cardiac",
+            "burns"
+          ],
+          "capacity": 12,
+          "reportedFreeBeds": 3,
+          "activeHoldCount": 0,
+          "availableBeds": 3,
+          "loadRatio": 0.75,
+          "verifiedAt": "2026-10-02T09:57:00Z",
+          "dataAgeMinutes": 5.166666666666667,
+          "freshness": "fresh",
+          "freshnessPolicy": {
+            "policyVersion": "demo-1",
+            "agingAfterMinutes": 10,
+            "staleAfterMinutes": 30
+          },
+          "inventoryUpdatedAt": "2026-10-02T09:57:00Z",
+          "version": 1
+        },
+        "matchesAllRequirements": true,
+        "travel": {
+          "distanceKm": 3.1,
+          "estimatedTravelMinutes": 9,
+          "source": "simulatedDistance",
+          "trafficConsidered": false
+        },
+        "score": 72.33,
+        "scoreBreakdown": {
+          "travelScore": 85.0,
+          "freshnessScore": 82.7778,
+          "headroomScore": 25.0
+        }
+      }
+    ],
+    "diagnostics": {
+      "excludedHospitalIds": [
+        "h_demo_cedar"
+      ],
+      "compatiblePoolCount": 1,
+      "freshPoolCount": 1,
+      "stalePoolCount": 0,
+      "unverifiedPoolCount": 0,
+      "freshAvailablePoolCount": 1
+    },
+    "policy": {
+      "policyVersion": "demo-1",
+      "responseDeadlineSeconds": 120,
+      "holdDurationSeconds": 900,
+      "agingAfterMinutes": 10,
+      "staleAfterMinutes": 30,
+      "travelWeight": 0.5,
+      "freshnessWeight": 0.3,
+      "headroomWeight": 0.2,
+      "travelScoreHorizonMinutes": 60,
+      "simulatedSpeedKph": 30,
+      "simulatedRoadFactor": 1.3
+    }
+  }
+}

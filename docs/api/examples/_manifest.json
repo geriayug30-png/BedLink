@@ -1,0 +1,1064 @@
+{
+  "description": "Mock exchange metadata, not an API payload. Scenarios reset unless README says otherwise. All body files are mapped to operation schemas. Tokens are placeholders.",
+  "exchanges": [
+    {
+      "name": "01-success/01-catalog",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals",
+      "path": "/api/v1/hospitals",
+      "operationId": "listHospitals",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "01-success/01-catalog.response.json"
+    },
+    {
+      "name": "01-success/02-matches",
+      "method": "POST",
+      "pathTemplate": "/api/v1/matches",
+      "path": "/api/v1/matches",
+      "operationId": "findMatches",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "01-success/02-matches.response.json",
+      "requestFile": "01-success/02-matches.request.json"
+    },
+    {
+      "name": "01-success/03-create",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests",
+      "path": "/api/v1/patient-requests",
+      "operationId": "createPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-success-create"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:05 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:05Z",
+        "Location": "/api/v1/patient-requests/req_success"
+      },
+      "responseFile": "01-success/03-create.response.json",
+      "requestFile": "01-success/03-create.request.json"
+    },
+    {
+      "name": "01-success/04-send",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/attempts",
+      "path": "/api/v1/patient-requests/req_success/attempts",
+      "operationId": "createAttempt",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-success-send"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:10 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:10Z",
+        "Location": "/api/v1/patient-requests/req_success"
+      },
+      "responseFile": "01-success/04-send.response.json",
+      "requestFile": "01-success/04-send.request.json"
+    },
+    {
+      "name": "01-success/05-inbox",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/incoming-requests",
+      "path": "/api/v1/hospitals/h_demo_cedar/incoming-requests",
+      "operationId": "getHospitalInbox",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:20 GMT"
+      },
+      "responseFile": "01-success/05-inbox.response.json"
+    },
+    {
+      "name": "01-success/06-accept",
+      "method": "POST",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/attempts/{attemptId}/accept",
+      "path": "/api/v1/hospitals/h_demo_cedar/attempts/att_success/accept",
+      "operationId": "acceptAttempt",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-success-accept"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:40 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:40Z"
+      },
+      "responseFile": "01-success/06-accept.response.json",
+      "requestFile": "01-success/06-accept.request.json"
+    },
+    {
+      "name": "01-success/07-status",
+      "method": "GET",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}",
+      "path": "/api/v1/patient-requests/req_success",
+      "operationId": "getPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:45 GMT"
+      },
+      "responseFile": "01-success/07-status.response.json"
+    },
+    {
+      "name": "01-success/07b-held-inbox",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/incoming-requests",
+      "path": "/api/v1/hospitals/h_demo_cedar/incoming-requests",
+      "operationId": "getHospitalInbox",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:45 GMT"
+      },
+      "responseFile": "01-success/07b-held-inbox.response.json"
+    },
+    {
+      "name": "01-success/08-arrival",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/arrivals",
+      "path": "/api/v1/patient-requests/req_success/arrivals",
+      "operationId": "recordArrival",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-01-success-08-arrival"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:10:00 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:10:00Z"
+      },
+      "responseFile": "01-success/08-arrival.response.json",
+      "requestFile": "01-success/08-arrival.request.json"
+    },
+    {
+      "name": "01-success/09-arrived-status",
+      "method": "GET",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}",
+      "path": "/api/v1/patient-requests/req_success",
+      "operationId": "getPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:10:01 GMT"
+      },
+      "responseFile": "01-success/09-arrived-status.response.json"
+    },
+    {
+      "name": "02-rejection/01-create",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests",
+      "path": "/api/v1/patient-requests",
+      "operationId": "createPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-02-rejection-01-create"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:05 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:05Z",
+        "Location": "/api/v1/patient-requests/req_reject"
+      },
+      "responseFile": "02-rejection/01-create.response.json",
+      "requestFile": "02-rejection/01-create.request.json"
+    },
+    {
+      "name": "02-rejection/02-send",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/attempts",
+      "path": "/api/v1/patient-requests/req_reject/attempts",
+      "operationId": "createAttempt",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-02-rejection-02-send"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:10 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:10Z",
+        "Location": "/api/v1/patient-requests/req_reject"
+      },
+      "responseFile": "02-rejection/02-send.response.json",
+      "requestFile": "02-rejection/02-send.request.json"
+    },
+    {
+      "name": "02-rejection/03-reject",
+      "method": "POST",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/attempts/{attemptId}/reject",
+      "path": "/api/v1/hospitals/h_demo_cedar/attempts/att_reject/reject",
+      "operationId": "rejectAttempt",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-02-rejection-03-reject"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:35 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:35Z"
+      },
+      "responseFile": "02-rejection/03-reject.response.json",
+      "requestFile": "02-rejection/03-reject.request.json"
+    },
+    {
+      "name": "02-rejection/04-fallback-offer",
+      "method": "GET",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}",
+      "path": "/api/v1/patient-requests/req_reject",
+      "operationId": "getPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:35 GMT"
+      },
+      "responseFile": "02-rejection/04-fallback-offer.response.json"
+    },
+    {
+      "name": "02-rejection/05-confirm-fallback",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/attempts",
+      "path": "/api/v1/patient-requests/req_reject/attempts",
+      "operationId": "createAttempt",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-02-rejection-05-confirm-fallback"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:40 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:40Z",
+        "Location": "/api/v1/patient-requests/req_reject"
+      },
+      "responseFile": "02-rejection/05-confirm-fallback.response.json",
+      "requestFile": "02-rejection/05-confirm-fallback.request.json"
+    },
+    {
+      "name": "03-timeout/01-create",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests",
+      "path": "/api/v1/patient-requests",
+      "operationId": "createPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-03-timeout-01-create"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:05 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:05Z",
+        "Location": "/api/v1/patient-requests/req_timeout"
+      },
+      "responseFile": "03-timeout/01-create.response.json",
+      "requestFile": "03-timeout/01-create.request.json"
+    },
+    {
+      "name": "03-timeout/02-send",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/attempts",
+      "path": "/api/v1/patient-requests/req_timeout/attempts",
+      "operationId": "createAttempt",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-03-timeout-02-send"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:10 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:10Z",
+        "Location": "/api/v1/patient-requests/req_timeout"
+      },
+      "responseFile": "03-timeout/02-send.response.json",
+      "requestFile": "03-timeout/02-send.request.json"
+    },
+    {
+      "name": "03-timeout/03-late-accept",
+      "method": "POST",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/attempts/{attemptId}/accept",
+      "path": "/api/v1/hospitals/h_demo_cedar/attempts/att_timeout/accept",
+      "operationId": "acceptAttempt",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-03-timeout-03-late-accept"
+      },
+      "status": 409,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:02:10 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:02:10Z"
+      },
+      "responseFile": "03-timeout/03-late-accept.response.json",
+      "requestFile": "03-timeout/03-late-accept.request.json"
+    },
+    {
+      "name": "03-timeout/04-fallback-offer",
+      "method": "GET",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}",
+      "path": "/api/v1/patient-requests/req_timeout",
+      "operationId": "getPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:02:10 GMT"
+      },
+      "responseFile": "03-timeout/04-fallback-offer.response.json"
+    },
+    {
+      "name": "03-timeout/05-confirm-fallback",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/attempts",
+      "path": "/api/v1/patient-requests/req_timeout/attempts",
+      "operationId": "createAttempt",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-03-timeout-05-confirm-fallback"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:02:15 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:02:15Z",
+        "Location": "/api/v1/patient-requests/req_timeout"
+      },
+      "responseFile": "03-timeout/05-confirm-fallback.response.json",
+      "requestFile": "03-timeout/05-confirm-fallback.request.json"
+    },
+    {
+      "name": "04-no-eligible/01-search",
+      "method": "POST",
+      "pathTemplate": "/api/v1/matches",
+      "path": "/api/v1/matches",
+      "operationId": "findMatches",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "04-no-eligible/01-search.response.json",
+      "requestFile": "04-no-eligible/01-search.request.json"
+    },
+    {
+      "name": "05-stale/01-search",
+      "method": "POST",
+      "pathTemplate": "/api/v1/matches",
+      "path": "/api/v1/matches",
+      "operationId": "findMatches",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "05-stale/01-search.response.json",
+      "requestFile": "05-stale/01-search.request.json"
+    },
+    {
+      "name": "06-capacity-unavailable/01-search",
+      "method": "POST",
+      "pathTemplate": "/api/v1/matches",
+      "path": "/api/v1/matches",
+      "operationId": "findMatches",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "06-capacity-unavailable/01-search.response.json",
+      "requestFile": "06-capacity-unavailable/01-search.request.json"
+    },
+    {
+      "name": "04-no-eligible/00-catalog",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals",
+      "path": "/api/v1/hospitals",
+      "operationId": "listHospitals",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "04-no-eligible/00-catalog.response.json"
+    },
+    {
+      "name": "05-stale/00-catalog",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals",
+      "path": "/api/v1/hospitals",
+      "operationId": "listHospitals",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "05-stale/00-catalog.response.json"
+    },
+    {
+      "name": "06-capacity-unavailable/00-catalog",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals",
+      "path": "/api/v1/hospitals",
+      "operationId": "listHospitals",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "06-capacity-unavailable/00-catalog.response.json"
+    },
+    {
+      "name": "07-nurse-conflict/01-read",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools",
+      "operationId": "listBedPools",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "07-nurse-conflict/01-read.response.json"
+    },
+    {
+      "name": "07-nurse-conflict/02-first-update",
+      "method": "PATCH",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools/{bedPoolId}",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools/p_cedar_critical",
+      "operationId": "updateBedPool",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-nurse-first"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:10 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:10Z"
+      },
+      "responseFile": "07-nurse-conflict/02-first-update.response.json",
+      "requestFile": "07-nurse-conflict/02-first-update.request.json"
+    },
+    {
+      "name": "07-nurse-conflict/03-conflicting-update",
+      "method": "PATCH",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools/{bedPoolId}",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools/p_cedar_critical",
+      "operationId": "updateBedPool",
+      "actor": "nurse_demo_cedar_b",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-07-nurse-conflict-03-conflicting-update"
+      },
+      "status": 409,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:11 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:11Z"
+      },
+      "responseFile": "07-nurse-conflict/03-conflicting-update.response.json",
+      "requestFile": "07-nurse-conflict/03-conflicting-update.request.json"
+    },
+    {
+      "name": "07-nurse-conflict/04-refetch",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools",
+      "operationId": "listBedPools",
+      "actor": "nurse_demo_cedar_b",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:15 GMT"
+      },
+      "responseFile": "07-nurse-conflict/04-refetch.response.json"
+    },
+    {
+      "name": "07-nurse-conflict/05-explicit-verify",
+      "method": "PATCH",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools/{bedPoolId}",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools/p_cedar_critical",
+      "operationId": "updateBedPool",
+      "actor": "nurse_demo_cedar_b",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-07-nurse-conflict-05-explicit-verify"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:20 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:20Z"
+      },
+      "responseFile": "07-nurse-conflict/05-explicit-verify.response.json",
+      "requestFile": "07-nurse-conflict/05-explicit-verify.request.json"
+    },
+    {
+      "name": "08-last-bed/00-catalog",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals",
+      "path": "/api/v1/hospitals",
+      "operationId": "listHospitals",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:00 GMT"
+      },
+      "responseFile": "08-last-bed/00-catalog.response.json"
+    },
+    {
+      "name": "08-last-bed/race_a-create",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests",
+      "path": "/api/v1/patient-requests",
+      "operationId": "createPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-08-last-bed-race_a-create"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:05 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:05Z",
+        "Location": "/api/v1/patient-requests/req_race_a"
+      },
+      "responseFile": "08-last-bed/race_a-create.response.json",
+      "requestFile": "08-last-bed/race_a-create.request.json"
+    },
+    {
+      "name": "08-last-bed/race_a-send",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/attempts",
+      "path": "/api/v1/patient-requests/req_race_a/attempts",
+      "operationId": "createAttempt",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-08-last-bed-race_a-send"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:10 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:10Z",
+        "Location": "/api/v1/patient-requests/req_race_a"
+      },
+      "responseFile": "08-last-bed/race_a-send.response.json",
+      "requestFile": "08-last-bed/race_a-send.request.json"
+    },
+    {
+      "name": "08-last-bed/race_b-create",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests",
+      "path": "/api/v1/patient-requests",
+      "operationId": "createPatientRequest",
+      "actor": "dispatch_demo_b",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-08-last-bed-race_b-create"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:05 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:05Z",
+        "Location": "/api/v1/patient-requests/req_race_b"
+      },
+      "responseFile": "08-last-bed/race_b-create.response.json",
+      "requestFile": "08-last-bed/race_b-create.request.json"
+    },
+    {
+      "name": "08-last-bed/race_b-send",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/attempts",
+      "path": "/api/v1/patient-requests/req_race_b/attempts",
+      "operationId": "createAttempt",
+      "actor": "dispatch_demo_b",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-08-last-bed-race_b-send"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:10 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:10Z",
+        "Location": "/api/v1/patient-requests/req_race_b"
+      },
+      "responseFile": "08-last-bed/race_b-send.response.json",
+      "requestFile": "08-last-bed/race_b-send.request.json"
+    },
+    {
+      "name": "08-last-bed/05-winner",
+      "method": "POST",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/attempts/{attemptId}/accept",
+      "path": "/api/v1/hospitals/h_demo_cedar/attempts/att_race_a/accept",
+      "operationId": "acceptAttempt",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-08-last-bed-05-winner"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:40 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:40Z"
+      },
+      "responseFile": "08-last-bed/05-winner.response.json",
+      "requestFile": "08-last-bed/05-winner.request.json"
+    },
+    {
+      "name": "08-last-bed/06-loser",
+      "method": "POST",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/attempts/{attemptId}/accept",
+      "path": "/api/v1/hospitals/h_demo_cedar/attempts/att_race_b/accept",
+      "operationId": "acceptAttempt",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-08-last-bed-06-loser"
+      },
+      "status": 409,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:41 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:41Z"
+      },
+      "responseFile": "08-last-bed/06-loser.response.json",
+      "requestFile": "08-last-bed/06-loser.request.json"
+    },
+    {
+      "name": "08-last-bed/07-loser-status",
+      "method": "GET",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}",
+      "path": "/api/v1/patient-requests/req_race_b",
+      "operationId": "getPatientRequest",
+      "actor": "dispatch_demo_b",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:42 GMT"
+      },
+      "responseFile": "08-last-bed/07-loser-status.response.json"
+    },
+    {
+      "name": "08-last-bed/08-reject-loser",
+      "method": "POST",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/attempts/{attemptId}/reject",
+      "path": "/api/v1/hospitals/h_demo_cedar/attempts/att_race_b/reject",
+      "operationId": "rejectAttempt",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-08-last-bed-08-reject-loser"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:45 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:00:45Z"
+      },
+      "responseFile": "08-last-bed/08-reject-loser.response.json",
+      "requestFile": "08-last-bed/08-reject-loser.request.json"
+    },
+    {
+      "name": "09-retries/01-create-replay",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests",
+      "path": "/api/v1/patient-requests",
+      "operationId": "createPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-success-create"
+      },
+      "status": 201,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:50 GMT",
+        "Idempotency-Replayed": "true",
+        "Idempotency-Expires-At": "2026-10-03T10:00:05Z",
+        "Location": "/api/v1/patient-requests/req_success"
+      },
+      "responseFile": "09-retries/01-create-replay.response.json",
+      "requestFile": "09-retries/01-create-replay.request.json"
+    },
+    {
+      "name": "09-retries/02-accept-replay",
+      "method": "POST",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/attempts/{attemptId}/accept",
+      "path": "/api/v1/hospitals/h_demo_cedar/attempts/att_success/accept",
+      "operationId": "acceptAttempt",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-success-accept"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:50 GMT",
+        "Idempotency-Replayed": "true",
+        "Idempotency-Expires-At": "2026-10-03T10:00:40Z"
+      },
+      "responseFile": "09-retries/02-accept-replay.response.json",
+      "requestFile": "09-retries/02-accept-replay.request.json"
+    },
+    {
+      "name": "09-retries/03-conflicting-payload",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests",
+      "path": "/api/v1/patient-requests",
+      "operationId": "createPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-success-create"
+      },
+      "status": 409,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:00:50 GMT"
+      },
+      "responseFile": "09-retries/03-conflicting-payload.response.json",
+      "requestFile": "09-retries/03-conflicting-payload.request.json"
+    },
+    {
+      "name": "10-hold-expiry/01-expired-status",
+      "method": "GET",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}",
+      "path": "/api/v1/patient-requests/req_success",
+      "operationId": "getPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:15:40 GMT"
+      },
+      "responseFile": "10-hold-expiry/01-expired-status.response.json"
+    },
+    {
+      "name": "10-hold-expiry/02-late-arrival",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/arrivals",
+      "path": "/api/v1/patient-requests/req_success/arrivals",
+      "operationId": "recordArrival",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-10-hold-expiry-02-late-arrival"
+      },
+      "status": 409,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:15:40 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:15:40Z"
+      },
+      "responseFile": "10-hold-expiry/02-late-arrival.response.json",
+      "requestFile": "10-hold-expiry/02-late-arrival.request.json"
+    },
+    {
+      "name": "10-hold-expiry/03-inventory",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools",
+      "operationId": "listBedPools",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:15:40 GMT"
+      },
+      "responseFile": "10-hold-expiry/03-inventory.response.json"
+    },
+    {
+      "name": "11-cancel-hold/01-release",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/holds/{holdId}/cancellations",
+      "path": "/api/v1/patient-requests/req_success/holds/hold_success/cancellations",
+      "operationId": "cancelActiveHold",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-11-cancel-hold-01-release"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:01:40 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:01:40Z"
+      },
+      "responseFile": "11-cancel-hold/01-release.response.json",
+      "requestFile": "11-cancel-hold/01-release.request.json"
+    },
+    {
+      "name": "12-cancel-request/01-cancel",
+      "method": "POST",
+      "pathTemplate": "/api/v1/patient-requests/{requestId}/cancellations",
+      "path": "/api/v1/patient-requests/req_success/cancellations",
+      "operationId": "cancelPatientRequest",
+      "actor": "dispatch_demo_a",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "key-12-cancel-request-01-cancel"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:01:40 GMT",
+        "Idempotency-Replayed": "false",
+        "Idempotency-Expires-At": "2026-10-03T10:01:40Z"
+      },
+      "responseFile": "12-cancel-request/01-cancel.response.json",
+      "requestFile": "12-cancel-request/01-cancel.request.json"
+    },
+    {
+      "name": "11-cancel-hold/02-inventory",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools",
+      "operationId": "listBedPools",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:01:40 GMT"
+      },
+      "responseFile": "11-cancel-hold/02-inventory.response.json"
+    },
+    {
+      "name": "12-cancel-request/02-inventory",
+      "method": "GET",
+      "pathTemplate": "/api/v1/hospitals/{hospitalId}/bed-pools",
+      "path": "/api/v1/hospitals/h_demo_cedar/bed-pools",
+      "operationId": "listBedPools",
+      "actor": "nurse_demo_cedar",
+      "requestHeaders": {
+        "Authorization": "Bearer <SUPABASE_ACCESS_TOKEN>"
+      },
+      "status": 200,
+      "responseHeaders": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Date": "Fri, 02 Oct 2026 10:01:40 GMT"
+      },
+      "responseFile": "12-cancel-request/02-inventory.response.json"
+    }
+  ]
+}

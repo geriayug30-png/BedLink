@@ -1,0 +1,2392 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: BedLink API contract
+  version: 1.0.0
+  description: Step 1 design contract; no backend implementation. JSON uses camelCase. REST with Supabase Auth bearer
+    access tokens. Server time and inventory are authoritative. Read decisions.md and frontend-handoff.md for normative
+    cross-resource invariants, ranking, idempotency and lifecycle rules. No patient names or clinical notes. Unknown
+    input fields/queries are 400. All bodies are application/json; every response includes serverTime. All timestamps
+    end in Z. API deployment URL remains configurable.
+servers:
+- url: /api/v1
+  description: Relative base path on the configured API origin; no live service implied.
+security:
+- bearerAuth: []
+tags:
+- name: Hospitals
+  description: Catalog, nurse availability and incoming attempts.
+- name: Dispatch
+  description: Matching and request lifecycle.
+paths:
+  /hospitals:
+    get:
+      operationId: listHospitals
+      summary: List hospitals with all bed pools
+      tags:
+      - Hospitals
+      description: 'Returns the complete demo catalog. No query parameters. Reading never verifies availability.
+        Authorization: Nurse or dispatcher may read the configured hospital catalog. No patient records are included.
+        All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      - nurse
+      x-authorization: Nurse or dispatcher may read the configured hospital catalog. No patient records are included.
+      parameters: []
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HospitalsResponse'
+              examples:
+                01-success-01-catalog:
+                  externalValue: ./examples/01-success/01-catalog.response.json
+                04-no-eligible-00-catalog:
+                  externalValue: ./examples/04-no-eligible/00-catalog.response.json
+                05-stale-00-catalog:
+                  externalValue: ./examples/05-stale/00-catalog.response.json
+                06-capacity-unavailable-00-catalog:
+                  externalValue: ./examples/06-capacity-unavailable/00-catalog.response.json
+                08-last-bed-00-catalog:
+                  externalValue: ./examples/08-last-bed/00-catalog.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /hospitals/{hospitalId}/bed-pools:
+    get:
+      operationId: listBedPools
+      summary: List pools for one hospital
+      tags:
+      - Hospitals
+      description: 'Returns current pool versions, counts, and freshness. No query parameters. Authorization: Nurse
+        or dispatcher may read the configured hospital catalog. No patient records are included. All errors use
+        ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      - nurse
+      x-authorization: Nurse or dispatcher may read the configured hospital catalog. No patient records are included.
+      parameters:
+      - $ref: '#/components/parameters/hospitalId'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BedPoolsResponse'
+              examples:
+                07-nurse-conflict-01-read:
+                  externalValue: ./examples/07-nurse-conflict/01-read.response.json
+                07-nurse-conflict-04-refetch:
+                  externalValue: ./examples/07-nurse-conflict/04-refetch.response.json
+                10-hold-expiry-03-inventory:
+                  externalValue: ./examples/10-hold-expiry/03-inventory.response.json
+                11-cancel-hold-02-inventory:
+                  externalValue: ./examples/11-cancel-hold/02-inventory.response.json
+                12-cancel-request-02-inventory:
+                  externalValue: ./examples/12-cancel-request/02-inventory.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /hospitals/{hospitalId}/bed-pools/{bedPoolId}:
+    patch:
+      operationId: updateBedPool
+      summary: Update or explicitly verify free beds
+      tags:
+      - Hospitals
+      description: 'Compare supplied version and enforce activeHoldCount <= reportedFreeBeds <= capacity atomically.
+        update and verify refresh verifiedAt and inventoryUpdatedAt to serverTime and increment version, including
+        same-count updates. verify requires the supplied count to equal the current count. Reads and replay never
+        verify. Authorization: Nurse only; server-managed hospital assignment must equal hospitalId and the resource
+        must belong to that hospital. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - nurse
+      x-authorization: Nurse only; server-managed hospital assignment must equal hospitalId and the resource must
+        belong to that hospital.
+      parameters:
+      - $ref: '#/components/parameters/hospitalId'
+      - $ref: '#/components/parameters/bedPoolId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BedPoolResponse'
+              examples:
+                07-nurse-conflict-02-first-update:
+                  externalValue: ./examples/07-nurse-conflict/02-first-update.response.json
+                07-nurse-conflict-05-explicit-verify:
+                  externalValue: ./examples/07-nurse-conflict/05-explicit-verify.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - VERSION_CONFLICT
+      - FREE_COUNT_BELOW_HOLDS
+      - VERIFICATION_COUNT_CHANGED
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityUpdate'
+            examples:
+              07-nurse-conflict-02-first-update:
+                externalValue: ./examples/07-nurse-conflict/02-first-update.request.json
+              07-nurse-conflict-03-conflicting-update:
+                externalValue: ./examples/07-nurse-conflict/03-conflicting-update.request.json
+              07-nurse-conflict-05-explicit-verify:
+                externalValue: ./examples/07-nurse-conflict/05-explicit-verify.request.json
+  /matches:
+    post:
+      operationId: findMatches
+      summary: Find ranked matching hospitals
+      tags:
+      - Dispatch
+      description: 'Read-only search; no Idempotency-Key needed. No capacity is reserved. All empty result conditions
+        return 200 with distinct result.outcome. Server policy and score components explain ordering. Authorization:
+        Dispatcher role required; no request record is created or read. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      x-authorization: Dispatcher role required; no request record is created or read.
+      parameters: []
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchesResponse'
+              examples:
+                01-success-02-matches:
+                  externalValue: ./examples/01-success/02-matches.response.json
+                04-no-eligible-01-search:
+                  externalValue: ./examples/04-no-eligible/01-search.response.json
+                05-stale-01-search:
+                  externalValue: ./examples/05-stale/01-search.response.json
+                06-capacity-unavailable-01-search:
+                  externalValue: ./examples/06-capacity-unavailable/01-search.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchSearch'
+            examples:
+              01-success-02-matches:
+                externalValue: ./examples/01-success/02-matches.request.json
+              04-no-eligible-01-search:
+                externalValue: ./examples/04-no-eligible/01-search.request.json
+              05-stale-01-search:
+                externalValue: ./examples/05-stale/01-search.request.json
+              06-capacity-unavailable-01-search:
+                externalValue: ./examples/06-capacity-unavailable/01-search.request.json
+  /patient-requests:
+    post:
+      operationId: createPatientRequest
+      summary: Create an anonymous patient request
+      tags:
+      - Dispatch
+      description: 'Creates searching state and returns current nextBest options. Does not contact a hospital. Owner
+        is taken from token; cannot be supplied in the body. Needs immutable in Step 1; cancel and create a new
+        request to change them. Authorization: Dispatcher becomes the owner. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      x-authorization: Dispatcher becomes the owner.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Created.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+            Location:
+              description: Relative /api/v1/patient-requests/{requestId} URL of the authoritative request snapshot.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+              examples:
+                01-success-03-create:
+                  externalValue: ./examples/01-success/03-create.response.json
+                02-rejection-01-create:
+                  externalValue: ./examples/02-rejection/01-create.response.json
+                03-timeout-01-create:
+                  externalValue: ./examples/03-timeout/01-create.response.json
+                08-last-bed-race_a-create:
+                  externalValue: ./examples/08-last-bed/race_a-create.response.json
+                08-last-bed-race_b-create:
+                  externalValue: ./examples/08-last-bed/race_b-create.response.json
+                09-retries-01-create-replay:
+                  externalValue: ./examples/09-retries/01-create-replay.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientRequest'
+            examples:
+              01-success-03-create:
+                externalValue: ./examples/01-success/03-create.request.json
+              02-rejection-01-create:
+                externalValue: ./examples/02-rejection/01-create.request.json
+              03-timeout-01-create:
+                externalValue: ./examples/03-timeout/01-create.request.json
+              08-last-bed-race_a-create:
+                externalValue: ./examples/08-last-bed/race_a-create.request.json
+              08-last-bed-race_b-create:
+                externalValue: ./examples/08-last-bed/race_b-create.request.json
+              09-retries-01-create-replay:
+                externalValue: ./examples/09-retries/01-create-replay.request.json
+              09-retries-03-conflicting-payload:
+                externalValue: ./examples/09-retries/03-conflicting-payload.request.json
+  /patient-requests/{requestId}:
+    get:
+      operationId: getPatientRequest
+      summary: Get request progress, history, hold, fallback
+      tags:
+      - Dispatch
+      description: 'Returns authoritative state after resolving any deadlines and hold expiry. These lifecycle transitions
+        may be materialized on reads; verification timestamps never change. No query parameters. Authorization:
+        Dispatcher only; request.ownerId equals authenticated subject. No organization-wide sharing in this demo.
+        All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      x-authorization: Dispatcher only; request.ownerId equals authenticated subject. No organization-wide sharing
+        in this demo.
+      parameters:
+      - $ref: '#/components/parameters/requestId'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+              examples:
+                01-success-07-status:
+                  externalValue: ./examples/01-success/07-status.response.json
+                01-success-09-arrived-status:
+                  externalValue: ./examples/01-success/09-arrived-status.response.json
+                02-rejection-04-fallback-offer:
+                  externalValue: ./examples/02-rejection/04-fallback-offer.response.json
+                03-timeout-04-fallback-offer:
+                  externalValue: ./examples/03-timeout/04-fallback-offer.response.json
+                08-last-bed-07-loser-status:
+                  externalValue: ./examples/08-last-bed/07-loser-status.response.json
+                10-hold-expiry-01-expired-status:
+                  externalValue: ./examples/10-hold-expiry/01-expired-status.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /patient-requests/{requestId}/attempts:
+    post:
+      operationId: createAttempt
+      summary: Send a confirmed hospital request
+      tags:
+      - Dispatch
+      description: 'Only from searching. Revalidate selected pool belongs to hospital, all requirements, verification
+        age < stale threshold, and availableBeds >= 1. Exclude all previously attempted hospitals. Create exactly
+        one pending attempt with deadline serverTime + 120 seconds; pending does not reserve capacity. Concurrent
+        sends serialize; one succeeds. Rejection/timeout only OFFERS fallback; this endpoint sends it after explicit
+        dispatcher confirmation. Authorization: Dispatcher only; request.ownerId equals authenticated subject. No
+        organization-wide sharing in this demo. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      x-authorization: Dispatcher only; request.ownerId equals authenticated subject. No organization-wide sharing
+        in this demo.
+      parameters:
+      - $ref: '#/components/parameters/requestId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Created.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+            Location:
+              description: Relative /api/v1/patient-requests/{requestId} URL of the authoritative request snapshot.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+              examples:
+                01-success-04-send:
+                  externalValue: ./examples/01-success/04-send.response.json
+                02-rejection-02-send:
+                  externalValue: ./examples/02-rejection/02-send.response.json
+                02-rejection-05-confirm-fallback:
+                  externalValue: ./examples/02-rejection/05-confirm-fallback.response.json
+                03-timeout-02-send:
+                  externalValue: ./examples/03-timeout/02-send.response.json
+                03-timeout-05-confirm-fallback:
+                  externalValue: ./examples/03-timeout/05-confirm-fallback.response.json
+                08-last-bed-race_a-send:
+                  externalValue: ./examples/08-last-bed/race_a-send.response.json
+                08-last-bed-race_b-send:
+                  externalValue: ./examples/08-last-bed/race_b-send.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - REQUEST_NOT_SEARCHING
+      - HOSPITAL_ALREADY_ATTEMPTED
+      - POOL_REQUIREMENTS_NOT_MET
+      - CAPACITY_UNAVAILABLE
+      - AVAILABILITY_OUTDATED
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAttempt'
+            examples:
+              01-success-04-send:
+                externalValue: ./examples/01-success/04-send.request.json
+              02-rejection-02-send:
+                externalValue: ./examples/02-rejection/02-send.request.json
+              02-rejection-05-confirm-fallback:
+                externalValue: ./examples/02-rejection/05-confirm-fallback.request.json
+              03-timeout-02-send:
+                externalValue: ./examples/03-timeout/02-send.request.json
+              03-timeout-05-confirm-fallback:
+                externalValue: ./examples/03-timeout/05-confirm-fallback.request.json
+              08-last-bed-race_a-send:
+                externalValue: ./examples/08-last-bed/race_a-send.request.json
+              08-last-bed-race_b-send:
+                externalValue: ./examples/08-last-bed/race_b-send.request.json
+  /hospitals/{hospitalId}/incoming-requests:
+    get:
+      operationId: getHospitalInbox
+      summary: Poll hospital inbox and active holds
+      tags:
+      - Hospitals
+      description: 'Returns pending attempts and active holds after deadline/expiry reconciliation. Empty arrays
+        are normal. No query parameters. Does not return unrelated attempts or request owner IDs. Authorization:
+        Nurse only; server-managed hospital assignment must equal hospitalId and the resource must belong to that
+        hospital. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - nurse
+      x-authorization: Nurse only; server-managed hospital assignment must equal hospitalId and the resource must
+        belong to that hospital.
+      parameters:
+      - $ref: '#/components/parameters/hospitalId'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxResponse'
+              examples:
+                01-success-05-inbox:
+                  externalValue: ./examples/01-success/05-inbox.response.json
+                01-success-07b-held-inbox:
+                  externalValue: ./examples/01-success/07b-held-inbox.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /hospitals/{hospitalId}/attempts/{attemptId}/accept:
+    post:
+      operationId: acceptAttempt
+      summary: Accept and atomically reserve one bed
+      tags:
+      - Hospitals
+      description: 'Under one serialized transaction: reconcile deadlines, ensure pending with serverNow < responseDeadlineAt,
+        verify request has no other pending attempt/active hold, recheck requirements, freshness and availableBeds
+        >= 1, then mark accepted, create one hold, increment pool version, set request held. Hold expires acceptance
+        time + configured duration. Recheck time immediately before transition. Failed capacity/freshness checks
+        leave the attempt pending until rejection or timeout. Late acceptance returns ATTEMPT_DEADLINE_PASSED even
+        if the worker is delayed. Authorization: Nurse only; server-managed hospital assignment must equal hospitalId
+        and the resource must belong to that hospital. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - nurse
+      x-authorization: Nurse only; server-managed hospital assignment must equal hospitalId and the resource must
+        belong to that hospital.
+      parameters:
+      - $ref: '#/components/parameters/hospitalId'
+      - $ref: '#/components/parameters/attemptId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptActionResponse'
+              examples:
+                01-success-06-accept:
+                  externalValue: ./examples/01-success/06-accept.response.json
+                08-last-bed-05-winner:
+                  externalValue: ./examples/08-last-bed/05-winner.response.json
+                09-retries-02-accept-replay:
+                  externalValue: ./examples/09-retries/02-accept-replay.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - ATTEMPT_DEADLINE_PASSED
+      - ATTEMPT_NOT_PENDING
+      - CAPACITY_UNAVAILABLE
+      - AVAILABILITY_OUTDATED
+      - POOL_REQUIREMENTS_NOT_MET
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptAttempt'
+            examples:
+              01-success-06-accept:
+                externalValue: ./examples/01-success/06-accept.request.json
+              03-timeout-03-late-accept:
+                externalValue: ./examples/03-timeout/03-late-accept.request.json
+              08-last-bed-05-winner:
+                externalValue: ./examples/08-last-bed/05-winner.request.json
+              08-last-bed-06-loser:
+                externalValue: ./examples/08-last-bed/06-loser.request.json
+              09-retries-02-accept-replay:
+                externalValue: ./examples/09-retries/02-accept-replay.request.json
+  /hospitals/{hospitalId}/attempts/{attemptId}/reject:
+    post:
+      operationId: rejectAttempt
+      summary: Reject an attempt and compute fallback offer
+      tags:
+      - Hospitals
+      description: 'Pending and serverNow < responseDeadlineAt only. Set rejected, request searching, and return
+        nextBest excluding every attempted hospital. No inventory change. Dispatcher explicitly creates a new attempt
+        to send a fallback. A timeout is authoritative at the deadline and cannot be replaced by rejection. Authorization:
+        Nurse only; server-managed hospital assignment must equal hospitalId and the resource must belong to that
+        hospital. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - nurse
+      x-authorization: Nurse only; server-managed hospital assignment must equal hospitalId and the resource must
+        belong to that hospital.
+      parameters:
+      - $ref: '#/components/parameters/hospitalId'
+      - $ref: '#/components/parameters/attemptId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptActionResponse'
+              examples:
+                02-rejection-03-reject:
+                  externalValue: ./examples/02-rejection/03-reject.response.json
+                08-last-bed-08-reject-loser:
+                  externalValue: ./examples/08-last-bed/08-reject-loser.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - ATTEMPT_DEADLINE_PASSED
+      - ATTEMPT_NOT_PENDING
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectAttempt'
+            examples:
+              02-rejection-03-reject:
+                externalValue: ./examples/02-rejection/03-reject.request.json
+              08-last-bed-08-reject-loser:
+                externalValue: ./examples/08-last-bed/08-reject-loser.request.json
+  /patient-requests/{requestId}/arrivals:
+    post:
+      operationId: recordArrival
+      summary: Record ambulance arrival against an active hold
+      tags:
+      - Dispatch
+      description: 'Require matching active hold and serverNow < expiresAt. In one transaction mark hold arrived,
+        request arrived, decrement reportedFreeBeds and activeHoldCount by one, increment version and update inventoryUpdatedAt;
+        availableBeds stays unchanged. verifiedAt stays unchanged. A fresh key on a completed arrival returns HOLD_NOT_ACTIVE;
+        retry the original key for replay. Authorization: Owning dispatcher OR nurse assigned to the exact hold
+        hospital. Out-of-scope object is 404. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      - nurse
+      x-authorization: Owning dispatcher OR nurse assigned to the exact hold hospital. Out-of-scope object is 404.
+      parameters:
+      - $ref: '#/components/parameters/requestId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrivalResponse'
+              examples:
+                01-success-08-arrival:
+                  externalValue: ./examples/01-success/08-arrival.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - HOLD_EXPIRED
+      - HOLD_NOT_ACTIVE
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordArrival'
+            examples:
+              01-success-08-arrival:
+                externalValue: ./examples/01-success/08-arrival.request.json
+              10-hold-expiry-02-late-arrival:
+                externalValue: ./examples/10-hold-expiry/02-late-arrival.request.json
+  /patient-requests/{requestId}/cancellations:
+    post:
+      operationId: cancelPatientRequest
+      summary: Cancel the patient request and release its hold
+      tags:
+      - Dispatch
+      description: 'Only searching, pending, or held. Atomically set cancelled, cancel any pending attempt or active
+        hold, release reserved capacity, and increment pool version only if inventory changed. reportedFreeBeds
+        and verifiedAt unchanged. arrived/cancelled with a new key returns REQUEST_TERMINAL. No fallback is offered
+        for cancelled requests. Authorization: Dispatcher only; request.ownerId equals authenticated subject. No
+        organization-wide sharing in this demo. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      x-authorization: Dispatcher only; request.ownerId equals authenticated subject. No organization-wide sharing
+        in this demo.
+      parameters:
+      - $ref: '#/components/parameters/requestId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+              examples:
+                12-cancel-request-01-cancel:
+                  externalValue: ./examples/12-cancel-request/01-cancel.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - REQUEST_TERMINAL
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+            examples:
+              12-cancel-request-01-cancel:
+                externalValue: ./examples/12-cancel-request/01-cancel.request.json
+  /patient-requests/{requestId}/holds/{holdId}/cancellations:
+    post:
+      operationId: cancelActiveHold
+      summary: Release a hold and resume searching
+      tags:
+      - Dispatch
+      description: 'Target an exact active hold. Mark cancelled with supplied reason, decrement activeHoldCount,
+        increment availableBeds and version, keep reportedFreeBeds and verifiedAt, set request searching, and return
+        nextBest excluding all attempted hospitals (including this hold hospital). Expired => HOLD_EXPIRED; other
+        terminal hold => HOLD_NOT_ACTIVE. Authorization: Dispatcher only; request.ownerId equals authenticated subject.
+        No organization-wide sharing in this demo. All errors use ErrorResponse.'
+      security:
+      - bearerAuth: []
+      x-roles:
+      - dispatcher
+      x-authorization: Dispatcher only; request.ownerId equals authenticated subject. No organization-wide sharing
+        in this demo.
+      parameters:
+      - $ref: '#/components/parameters/requestId'
+      - $ref: '#/components/parameters/holdId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Success.
+          headers:
+            Cache-Control:
+              description: Always no-store. Do not serve cached capacity or request state.
+              schema:
+                type: string
+                const: no-store
+            Date:
+              description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+              schema:
+                type: string
+            Idempotency-Replayed:
+              description: true on replay; false on newly executed and stored result.
+              schema:
+                type: boolean
+            Idempotency-Expires-At:
+              description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+              schema:
+                $ref: '#/components/schemas/Timestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+              examples:
+                11-cancel-hold-01-release:
+                  externalValue: ./examples/11-cancel-hold/01-release.response.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-conflict-codes:
+      - HOLD_EXPIRED
+      - HOLD_NOT_ACTIVE
+      - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_IN_PROGRESS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelHold'
+            examples:
+              11-cancel-hold-01-release:
+                externalValue: ./examples/11-cancel-hold/01-release.request.json
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase Auth access token. Backend validates signature, issuer, audience, expiry and current
+        authorization. Roles/assignments from trusted server-managed records, never client-editable user metadata.
+        Never use a Supabase service-role key in a frontend.
+  parameters:
+    hospitalId:
+      name: hospitalId
+      in: path
+      required: true
+      description: Opaque hospitalId. Must belong to the parent path resource.
+      schema:
+        $ref: '#/components/schemas/Id'
+    bedPoolId:
+      name: bedPoolId
+      in: path
+      required: true
+      description: Opaque bedPoolId. Must belong to the parent path resource.
+      schema:
+        $ref: '#/components/schemas/Id'
+    requestId:
+      name: requestId
+      in: path
+      required: true
+      description: Opaque requestId. Must belong to the parent path resource.
+      schema:
+        $ref: '#/components/schemas/Id'
+    attemptId:
+      name: attemptId
+      in: path
+      required: true
+      description: Opaque attemptId. Must belong to the parent path resource.
+      schema:
+        $ref: '#/components/schemas/Id'
+    holdId:
+      name: holdId
+      in: path
+      required: true
+      description: Opaque holdId. Must belong to the parent path resource.
+      schema:
+        $ref: '#/components/schemas/Id'
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: New UUID or similarly unique key for each user intent. Reuse unchanged on retries. Scoped to
+        authenticated issuer+subject across all mutations; retained 24 hours. See frontend-handoff.md.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: ^[A-Za-z0-9._:-]+$
+  responses:
+    BadRequest:
+      description: INVALID_INPUT or IDEMPOTENCY_KEY_REQUIRED; malformed JSON, invalid parameters or unknown fields.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: UNAUTHENTICATED; absent, invalid, expired, or revoked bearer token.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+        WWW-Authenticate:
+          schema:
+            type: string
+          description: Bearer challenge.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: FORBIDDEN; authenticated role cannot use this operation.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: NOT_FOUND; resource absent, wrong parent, or object outside the caller authorization scope. Do
+        not reveal which.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Business or concurrency conflict. Inspect error.code; operation-specific codes are listed on
+        the operation.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+        Retry-After:
+          description: Seconds before retry. Required for 429/503; present for IDEMPOTENCY_IN_PROGRESS (1 second).
+          schema:
+            type: integer
+            minimum: 1
+        Idempotency-Replayed:
+          description: true on replay; false on newly executed and stored result.
+          schema:
+            type: boolean
+        Idempotency-Expires-At:
+          description: End of the 24-hour replay guarantee. Present when an idempotency result has been stored.
+          schema:
+            $ref: '#/components/schemas/Timestamp'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnsupportedMediaType:
+      description: 'UNSUPPORTED_MEDIA_TYPE; JSON body requires Content-Type: application/json.'
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: RATE_LIMITED; honor Retry-After seconds.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+        Retry-After:
+          description: Seconds before retry. Required for 429/503; present for IDEMPOTENCY_IN_PROGRESS (1 second).
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: INTERNAL_ERROR; no internal stack or database details.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: SERVICE_UNAVAILABLE; result may be unknown, retry a mutation with the same Idempotency-Key.
+      headers:
+        Cache-Control:
+          description: Always no-store. Do not serve cached capacity or request state.
+          schema:
+            type: string
+            const: no-store
+        Date:
+          description: Current HTTP response generation time; use with immediate refetch after idempotent replay.
+          schema:
+            type: string
+        Retry-After:
+          description: Seconds before retry. Required for 429/503; present for IDEMPOTENCY_IN_PROGRESS (1 second).
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Id:
+      type: string
+      minLength: 1
+      maxLength: 128
+      description: Opaque identifier. Never parse it; URL-encode when used in paths.
+    Timestamp:
+      type: string
+      format: date-time
+      pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$
+      description: UTC ISO 8601 timestamp, with Z suffix. Assigned by the server.
+    Location:
+      type: object
+      additionalProperties: false
+      required:
+      - latitude
+      - longitude
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+    Resource:
+      type: string
+      enum:
+      - icu
+      - ventilator
+      - oxygen
+    Specialty:
+      type: string
+      enum:
+      - cardiac
+      - burns
+    Needs:
+      type: object
+      additionalProperties: false
+      required:
+      - location
+      - resources
+      properties:
+        location:
+          $ref: '#/components/schemas/Location'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+        specialty:
+          anyOf:
+          - $ref: '#/components/schemas/Specialty'
+          - type: 'null'
+          default: null
+      description: All resources and the optional specialty must be provided together by a single bed pool. Omitted
+        specialty means null. No free-text patient information.
+    HospitalSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - location
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        location:
+          $ref: '#/components/schemas/Location'
+    FreshnessPolicy:
+      type: object
+      additionalProperties: false
+      required:
+      - policyVersion
+      - agingAfterMinutes
+      - staleAfterMinutes
+      properties:
+        policyVersion:
+          type: string
+          minLength: 1
+        agingAfterMinutes:
+          type: number
+          minimum: 0
+        staleAfterMinutes:
+          type: number
+          exclusiveMinimum: 0
+      description: Effective server thresholds; agingAfterMinutes < staleAfterMinutes. Returned on pools so catalog
+        and nurse screens do not hardcode demo defaults.
+    BedPool:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - hospitalId
+      - label
+      - resources
+      - specialties
+      - capacity
+      - reportedFreeBeds
+      - activeHoldCount
+      - availableBeds
+      - loadRatio
+      - verifiedAt
+      - dataAgeMinutes
+      - freshness
+      - freshnessPolicy
+      - inventoryUpdatedAt
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        hospitalId:
+          $ref: '#/components/schemas/Id'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 120
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+        specialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/Specialty'
+          maxItems: 2
+          uniqueItems: true
+        capacity:
+          type: integer
+          minimum: 1
+        reportedFreeBeds:
+          type: integer
+          minimum: 0
+          description: Physical unoccupied staffed usable beds, INCLUDING beds held by BedLink. Never subtract holds
+            in this nurse-entered value.
+        activeHoldCount:
+          type: integer
+          minimum: 0
+          description: Unexpired active BedLink holds. Pending attempts consume no capacity.
+        availableBeds:
+          type: integer
+          minimum: 0
+          description: reportedFreeBeds - activeHoldCount. Eligible for new holds only if fresh enough.
+        loadRatio:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 1 - availableBeds / capacity; pool occupancy plus BedLink reservations, NOT ED queue length
+            or hospital-wide utilization.
+        verifiedAt:
+          anyOf:
+          - $ref: '#/components/schemas/Timestamp'
+          - type: 'null'
+        dataAgeMinutes:
+          anyOf:
+          - type: number
+            minimum: 0
+            description: (serverTime - verifiedAt) / 60000, fractional minutes. Null when never verified.
+          - type: 'null'
+        freshness:
+          type: string
+          enum:
+          - fresh
+          - aging
+          - stale
+          - unverified
+        freshnessPolicy:
+          $ref: '#/components/schemas/FreshnessPolicy'
+        inventoryUpdatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        version:
+          type: integer
+          minimum: 1
+          description: Monotonic version incremented on verification, count edits, and hold/inventory changes. Reads
+            never increment it.
+      description: Each physical bed belongs to exactly one pool. 0 <= activeHoldCount <= reportedFreeBeds <= capacity.
+        verifiedAt changes only on successful nurse update or explicit verification; arrival and hold changes do
+        not refresh it.
+      allOf:
+      - if:
+          properties:
+            freshness:
+              const: unverified
+        then:
+          properties:
+            verifiedAt:
+              type: 'null'
+            dataAgeMinutes:
+              type: 'null'
+        else:
+          properties:
+            verifiedAt:
+              $ref: '#/components/schemas/Timestamp'
+            dataAgeMinutes:
+              type: number
+              minimum: 0
+    Hospital:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - location
+      - bedPools
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        location:
+          $ref: '#/components/schemas/Location'
+        bedPools:
+          type: array
+          items:
+            $ref: '#/components/schemas/BedPool'
+    HospitalsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - hospitals
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        hospitals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hospital'
+      description: Entire configured demo catalog, ordered by hospital ID and pool ID using ascending Unicode code-point
+        order. No pagination in Step 1.
+    BedPoolsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - hospital
+      - bedPools
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        hospital:
+          $ref: '#/components/schemas/HospitalSummary'
+        bedPools:
+          type: array
+          items:
+            $ref: '#/components/schemas/BedPool'
+    BedPoolResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - bedPool
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        bedPool:
+          $ref: '#/components/schemas/BedPool'
+    AvailabilityUpdate:
+      type: object
+      additionalProperties: false
+      required:
+      - operation
+      - reportedFreeBeds
+      - version
+      properties:
+        operation:
+          type: string
+          enum:
+          - update
+          - verify
+        reportedFreeBeds:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 1
+      description: All fields required. update records a new count; verify explicitly confirms the unchanged current
+        count. verify with a different count fails 409 VERIFICATION_COUNT_CHANGED. Both refresh verifiedAt and increment
+        version once; replay does neither. Count must be between activeHoldCount and capacity.
+    RankingPolicy:
+      type: object
+      additionalProperties: false
+      required:
+      - policyVersion
+      - responseDeadlineSeconds
+      - holdDurationSeconds
+      - agingAfterMinutes
+      - staleAfterMinutes
+      - travelWeight
+      - freshnessWeight
+      - headroomWeight
+      - travelScoreHorizonMinutes
+      - simulatedSpeedKph
+      - simulatedRoadFactor
+      properties:
+        policyVersion:
+          type: string
+        responseDeadlineSeconds:
+          type: integer
+          const: 120
+        holdDurationSeconds:
+          type: integer
+          minimum: 1
+        agingAfterMinutes:
+          type: number
+          minimum: 0
+        staleAfterMinutes:
+          type: number
+          exclusiveMinimum: 0
+        travelWeight:
+          type: number
+          minimum: 0
+          maximum: 1
+        freshnessWeight:
+          type: number
+          minimum: 0
+          maximum: 1
+        headroomWeight:
+          type: number
+          minimum: 0
+          maximum: 1
+        travelScoreHorizonMinutes:
+          type: number
+          exclusiveMinimum: 0
+        simulatedSpeedKph:
+          type: number
+          exclusiveMinimum: 0
+        simulatedRoadFactor:
+          type: number
+          minimum: 1
+      description: Effective server policy. Demo defaults in decisions.md; weights sum to 1. responseDeadlineSeconds
+        is fixed at 120 for this contract. Clients must not hardcode configurable defaults.
+    TravelEstimate:
+      type: object
+      additionalProperties: false
+      required:
+      - distanceKm
+      - estimatedTravelMinutes
+      - source
+      - trafficConsidered
+      properties:
+        distanceKm:
+          type: number
+          minimum: 0
+        estimatedTravelMinutes:
+          type: integer
+          minimum: 1
+        source:
+          type: string
+          enum:
+          - simulatedDistance
+        trafficConsidered:
+          type: boolean
+          const: false
+      description: Straight-line Haversine distance; estimated time uses road factor and fixed speed, no road routing
+        or traffic. Not a live ETA.
+    ScoreBreakdown:
+      type: object
+      additionalProperties: false
+      required:
+      - travelScore
+      - freshnessScore
+      - headroomScore
+      properties:
+        travelScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        freshnessScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        headroomScore:
+          type: number
+          minimum: 0
+          maximum: 100
+    MatchCandidate:
+      type: object
+      additionalProperties: false
+      required:
+      - rank
+      - hospital
+      - bedPool
+      - matchesAllRequirements
+      - travel
+      - score
+      - scoreBreakdown
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+        hospital:
+          $ref: '#/components/schemas/HospitalSummary'
+        bedPool:
+          $ref: '#/components/schemas/BedPool'
+        matchesAllRequirements:
+          type: boolean
+          const: true
+        travel:
+          $ref: '#/components/schemas/TravelEstimate'
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        scoreBreakdown:
+          $ref: '#/components/schemas/ScoreBreakdown'
+    MatchDiagnostics:
+      type: object
+      additionalProperties: false
+      required:
+      - excludedHospitalIds
+      - compatiblePoolCount
+      - freshPoolCount
+      - stalePoolCount
+      - unverifiedPoolCount
+      - freshAvailablePoolCount
+      properties:
+        excludedHospitalIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Id'
+          uniqueItems: true
+        compatiblePoolCount:
+          type: integer
+          minimum: 0
+        freshPoolCount:
+          type: integer
+          minimum: 0
+        stalePoolCount:
+          type: integer
+          minimum: 0
+        unverifiedPoolCount:
+          type: integer
+          minimum: 0
+        freshAvailablePoolCount:
+          type: integer
+          minimum: 0
+      description: Counts after excluding previously attempted hospitals and incompatible pools. freshPoolCount
+        includes fresh and aging. compatiblePoolCount = freshPoolCount + stalePoolCount + unverifiedPoolCount. Counts
+        concern pools; candidates contain one best pool per hospital.
+    MatchResult:
+      type: object
+      additionalProperties: false
+      required:
+      - outcome
+      - candidates
+      - diagnostics
+      - policy
+      properties:
+        outcome:
+          type: string
+          enum:
+          - matchesFound
+          - noEligibleHospitals
+          - capacityUnavailable
+          - availabilityOutdated
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchCandidate'
+        diagnostics:
+          $ref: '#/components/schemas/MatchDiagnostics'
+        policy:
+          $ref: '#/components/schemas/RankingPolicy'
+      description: matchesFound if any fresh/aging compatible pool has availability. Else availabilityOutdated if
+        any compatible pool is stale/unverified (capacity there is not trusted); else capacityUnavailable if compatible
+        pools exist; else noEligibleHospitals. All outcomes are successful 200 search results. Mixed stale/full
+        results prioritize availabilityOutdated and expose counts.
+      allOf:
+      - if:
+          properties:
+            outcome:
+              const: matchesFound
+        then:
+          properties:
+            candidates:
+              minItems: 1
+        else:
+          properties:
+            candidates:
+              maxItems: 0
+    MatchSearch:
+      type: object
+      additionalProperties: false
+      required:
+      - needs
+      properties:
+        needs:
+          $ref: '#/components/schemas/Needs'
+    MatchesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - result
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        result:
+          $ref: '#/components/schemas/MatchResult'
+    CreatePatientRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - patientReference
+      - needs
+      properties:
+        patientReference:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9_-]+$
+          description: Anonymous dispatch reference only; no names, phone numbers, or medical notes. Not an idempotency
+            key.
+        needs:
+          $ref: '#/components/schemas/Needs'
+    PatientRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - patientReference
+      - ownerId
+      - needs
+      - status
+      - createdAt
+      - updatedAt
+      - activeAttemptId
+      - activeHoldId
+      - cancellationReason
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        patientReference:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9_-]+$
+        ownerId:
+          $ref: '#/components/schemas/Id'
+        needs:
+          $ref: '#/components/schemas/Needs'
+        status:
+          type: string
+          enum:
+          - searching
+          - pending
+          - held
+          - arrived
+          - cancelled
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        activeAttemptId:
+          anyOf:
+          - $ref: '#/components/schemas/Id'
+          - type: 'null'
+        activeHoldId:
+          anyOf:
+          - $ref: '#/components/schemas/Id'
+          - type: 'null'
+        cancellationReason:
+          anyOf:
+          - type: string
+            enum:
+            - noLongerNeeded
+            - duplicate
+            - other
+          - type: 'null'
+      allOf:
+      - if:
+          properties:
+            status:
+              const: pending
+        then:
+          properties:
+            activeAttemptId:
+              $ref: '#/components/schemas/Id'
+            activeHoldId:
+              type: 'null'
+      - if:
+          properties:
+            status:
+              const: held
+        then:
+          properties:
+            activeHoldId:
+              $ref: '#/components/schemas/Id'
+            activeAttemptId:
+              type: 'null'
+      - if:
+          properties:
+            status:
+              enum:
+              - searching
+              - arrived
+              - cancelled
+        then:
+          properties:
+            activeAttemptId:
+              type: 'null'
+            activeHoldId:
+              type: 'null'
+      - if:
+          properties:
+            status:
+              const: cancelled
+        then:
+          properties:
+            cancellationReason:
+              type: string
+              enum:
+              - noLongerNeeded
+              - duplicate
+              - other
+        else:
+          properties:
+            cancellationReason:
+              type: 'null'
+    Attempt:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - requestId
+      - hospitalId
+      - bedPoolId
+      - status
+      - createdAt
+      - responseDeadlineAt
+      - resolvedAt
+      - reasonCode
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        requestId:
+          $ref: '#/components/schemas/Id'
+        hospitalId:
+          $ref: '#/components/schemas/Id'
+        bedPoolId:
+          $ref: '#/components/schemas/Id'
+        status:
+          type: string
+          enum:
+          - pending
+          - accepted
+          - rejected
+          - timedOut
+          - cancelled
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        responseDeadlineAt:
+          $ref: '#/components/schemas/Timestamp'
+        resolvedAt:
+          anyOf:
+          - $ref: '#/components/schemas/Timestamp'
+          - type: 'null'
+        reasonCode:
+          anyOf:
+          - type: string
+            enum:
+            - cannotReceive
+            - capacityChanged
+            - other
+            - responseTimeout
+            - requestCancelled
+          - type: 'null'
+      description: responseDeadlineAt = createdAt + 120 seconds. Timeout wins at serverNow >= deadline, even if
+        a background worker has not run. accepted remains accepted after its hold arrives, expires, or is cancelled.
+      allOf:
+      - if:
+          properties:
+            status:
+              const: pending
+        then:
+          properties:
+            resolvedAt:
+              type: 'null'
+            reasonCode:
+              type: 'null'
+        else:
+          properties:
+            resolvedAt:
+              $ref: '#/components/schemas/Timestamp'
+      - if:
+          properties:
+            status:
+              const: accepted
+        then:
+          properties:
+            reasonCode:
+              type: 'null'
+      - if:
+          properties:
+            status:
+              const: rejected
+        then:
+          properties:
+            reasonCode:
+              type: string
+              enum:
+              - cannotReceive
+              - capacityChanged
+              - other
+      - if:
+          properties:
+            status:
+              const: timedOut
+        then:
+          properties:
+            reasonCode:
+              const: responseTimeout
+      - if:
+          properties:
+            status:
+              const: cancelled
+        then:
+          properties:
+            reasonCode:
+              const: requestCancelled
+    Hold:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - requestId
+      - attemptId
+      - hospitalId
+      - bedPoolId
+      - status
+      - createdAt
+      - expiresAt
+      - endedAt
+      - endReason
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        requestId:
+          $ref: '#/components/schemas/Id'
+        attemptId:
+          $ref: '#/components/schemas/Id'
+        hospitalId:
+          $ref: '#/components/schemas/Id'
+        bedPoolId:
+          $ref: '#/components/schemas/Id'
+        status:
+          type: string
+          enum:
+          - active
+          - arrived
+          - cancelled
+          - expired
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        endedAt:
+          anyOf:
+          - $ref: '#/components/schemas/Timestamp'
+          - type: 'null'
+        endReason:
+          anyOf:
+          - type: string
+            enum:
+            - ambulanceArrived
+            - requestCancelled
+            - transportPlanChanged
+            - other
+            - holdExpired
+          - type: 'null'
+      description: One bed; expiry is independent of responseDeadlineAt and starts at acceptance. At serverNow >=
+        expiresAt, active becomes expired. Arrival consumes the held bed once.
+      allOf:
+      - if:
+          properties:
+            status:
+              const: active
+        then:
+          properties:
+            endedAt:
+              type: 'null'
+            endReason:
+              type: 'null'
+        else:
+          properties:
+            endedAt:
+              $ref: '#/components/schemas/Timestamp'
+            endReason:
+              type: string
+              enum:
+              - ambulanceArrived
+              - requestCancelled
+              - transportPlanChanged
+              - other
+              - holdExpired
+      - if:
+          properties:
+            status:
+              const: arrived
+        then:
+          properties:
+            endReason:
+              const: ambulanceArrived
+      - if:
+          properties:
+            status:
+              const: expired
+        then:
+          properties:
+            endReason:
+              const: holdExpired
+      - if:
+          properties:
+            status:
+              const: cancelled
+        then:
+          properties:
+            endReason:
+              type: string
+              enum:
+              - requestCancelled
+              - transportPlanChanged
+              - other
+    RequestResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - request
+      - attempts
+      - holds
+      - activeHold
+      - nextBest
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        request:
+          $ref: '#/components/schemas/PatientRequest'
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attempt'
+        holds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hold'
+        activeHold:
+          anyOf:
+          - $ref: '#/components/schemas/Hold'
+          - type: 'null'
+        nextBest:
+          anyOf:
+          - $ref: '#/components/schemas/MatchResult'
+          - type: 'null'
+      description: Complete authorized request snapshot. Histories sorted by createdAt then ID. activeHold is null
+        unless held. nextBest is populated only while searching, excluding every hospital in attempts regardless
+        of terminal attempt status; the first candidate is the fallback offer. It is NOT sent automatically. Null
+        during pending, held, arrived, cancelled. Histories include cancelled/expired holds.
+    CreateAttempt:
+      type: object
+      additionalProperties: false
+      required:
+      - hospitalId
+      - bedPoolId
+      properties:
+        hospitalId:
+          $ref: '#/components/schemas/Id'
+        bedPoolId:
+          $ref: '#/components/schemas/Id'
+      description: Dispatcher explicitly confirms selected hospital and pool. Server revalidates requirements, freshness,
+        current available capacity and previously attempted hospitals; ranking results are advisory and do not reserve
+        capacity.
+    AcceptAttempt:
+      type: object
+      additionalProperties: false
+      required: []
+      properties: {}
+      description: Required empty JSON object. No client-supplied timestamp or count.
+    RejectAttempt:
+      type: object
+      additionalProperties: false
+      required:
+      - reasonCode
+      properties:
+        reasonCode:
+          type: string
+          enum:
+          - cannotReceive
+          - capacityChanged
+          - other
+    AttemptActionResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - attempt
+      - requestStatus
+      - hold
+      - bedPool
+      - nextBest
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        attempt:
+          $ref: '#/components/schemas/Attempt'
+        requestStatus:
+          type: string
+          enum:
+          - held
+          - searching
+        hold:
+          anyOf:
+          - $ref: '#/components/schemas/Hold'
+          - type: 'null'
+        bedPool:
+          $ref: '#/components/schemas/BedPool'
+        nextBest:
+          anyOf:
+          - $ref: '#/components/schemas/MatchResult'
+          - type: 'null'
+      description: 'Accepted: held, active hold, nextBest null. Rejected: searching, hold null, nextBest recomputed.
+        Exposes no other attempts or owner identity. Dispatcher obtains authoritative state through GET request.'
+    IncomingPatient:
+      type: object
+      additionalProperties: false
+      required:
+      - requestId
+      - patientReference
+      - needs
+      properties:
+        requestId:
+          $ref: '#/components/schemas/Id'
+        patientReference:
+          type: string
+          minLength: 1
+          maxLength: 64
+        needs:
+          $ref: '#/components/schemas/Needs'
+    IncomingAttempt:
+      type: object
+      additionalProperties: false
+      required:
+      - patient
+      - attempt
+      properties:
+        patient:
+          $ref: '#/components/schemas/IncomingPatient'
+        attempt:
+          $ref: '#/components/schemas/Attempt'
+    IncomingHold:
+      type: object
+      additionalProperties: false
+      required:
+      - patient
+      - hold
+      properties:
+        patient:
+          $ref: '#/components/schemas/IncomingPatient'
+        hold:
+          $ref: '#/components/schemas/Hold'
+    InboxResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - pendingAttempts
+      - activeHolds
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        pendingAttempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncomingAttempt'
+        activeHolds:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncomingHold'
+      description: Only the assigned hospital. pendingAttempts contains unexpired pending attempts ordered by responseDeadlineAt
+        then ID; activeHolds ordered by expiresAt then ID. No other hospitals history. Full demo inbox, no pagination.
+    RecordArrival:
+      type: object
+      additionalProperties: false
+      required:
+      - holdId
+      properties:
+        holdId:
+          $ref: '#/components/schemas/Id'
+      description: Target an exact active hold; arrival cannot be backdated. Server time controls expiry.
+    ArrivalResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - requestId
+      - requestStatus
+      - hold
+      - bedPool
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        requestId:
+          $ref: '#/components/schemas/Id'
+        requestStatus:
+          type: string
+          enum:
+          - arrived
+        hold:
+          $ref: '#/components/schemas/Hold'
+        bedPool:
+          $ref: '#/components/schemas/BedPool'
+    CancelRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - reasonCode
+      properties:
+        reasonCode:
+          type: string
+          enum:
+          - noLongerNeeded
+          - duplicate
+          - other
+    CancelHold:
+      type: object
+      additionalProperties: false
+      required:
+      - reasonCode
+      properties:
+        reasonCode:
+          type: string
+          enum:
+          - transportPlanChanged
+          - other
+    FieldDetail:
+      type: object
+      additionalProperties: false
+      required:
+      - field
+      - code
+      - message
+      properties:
+        field:
+          type: string
+          minLength: 1
+          description: JSON Pointer for a body field, or header name.
+        code:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          enum:
+          - INVALID_INPUT
+          - UNAUTHENTICATED
+          - FORBIDDEN
+          - NOT_FOUND
+          - UNSUPPORTED_MEDIA_TYPE
+          - RATE_LIMITED
+          - INTERNAL_ERROR
+          - SERVICE_UNAVAILABLE
+          - IDEMPOTENCY_KEY_REQUIRED
+          - IDEMPOTENCY_KEY_REUSED
+          - IDEMPOTENCY_IN_PROGRESS
+          - VERSION_CONFLICT
+          - FREE_COUNT_BELOW_HOLDS
+          - VERIFICATION_COUNT_CHANGED
+          - REQUEST_NOT_SEARCHING
+          - HOSPITAL_ALREADY_ATTEMPTED
+          - POOL_REQUIREMENTS_NOT_MET
+          - CAPACITY_UNAVAILABLE
+          - AVAILABILITY_OUTDATED
+          - ATTEMPT_DEADLINE_PASSED
+          - ATTEMPT_NOT_PENDING
+          - HOLD_EXPIRED
+          - HOLD_NOT_ACTIVE
+          - REQUEST_TERMINAL
+        message:
+          type: string
+          minLength: 1
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldDetail'
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - serverTime
+      - error
+      properties:
+        serverTime:
+          $ref: '#/components/schemas/Timestamp'
+        error:
+          $ref: '#/components/schemas/Error'

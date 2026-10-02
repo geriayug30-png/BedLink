@@ -1,0 +1,42 @@
+{
+  "serverTime": "2026-10-02T10:00:10Z",
+  "request": {
+    "id": "req_success",
+    "patientReference": "ANON_SUCCESS",
+    "ownerId": "dispatch_demo_a",
+    "needs": {
+      "location": {
+        "latitude": 12.97,
+        "longitude": 77.6
+      },
+      "resources": [
+        "icu",
+        "ventilator",
+        "oxygen"
+      ],
+      "specialty": "cardiac"
+    },
+    "status": "pending",
+    "createdAt": "2026-10-02T10:00:05Z",
+    "updatedAt": "2026-10-02T10:00:10Z",
+    "activeAttemptId": "att_success",
+    "activeHoldId": null,
+    "cancellationReason": null
+  },
+  "attempts": [
+    {
+      "id": "att_success",
+      "requestId": "req_success",
+      "hospitalId": "h_demo_cedar",
+      "bedPoolId": "p_cedar_critical",
+      "status": "pending",
+      "createdAt": "2026-10-02T10:00:10Z",
+      "responseDeadlineAt": "2026-10-02T10:02:10Z",
+      "resolvedAt": null,
+      "reasonCode": null
+    }
+  ],
+  "holds": [],
+  "activeHold": null,
+  "nextBest": null
+}

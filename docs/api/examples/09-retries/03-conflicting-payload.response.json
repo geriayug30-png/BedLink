@@ -1,0 +1,7 @@
+{
+  "serverTime": "2026-10-02T10:00:50Z",
+  "error": {
+    "code": "IDEMPOTENCY_KEY_REUSED",
+    "message": "This key was already used with a different request."
+  }
+}

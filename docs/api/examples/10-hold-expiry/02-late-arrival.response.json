@@ -1,0 +1,7 @@
+{
+  "serverTime": "2026-10-02T10:15:40Z",
+  "error": {
+    "code": "HOLD_EXPIRED",
+    "message": "The hold expired. Refetch the request and confirm a new option."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "serverTime": "2026-10-02T10:02:10Z",
+  "error": {
+    "code": "ATTEMPT_DEADLINE_PASSED",
+    "message": "The response deadline has passed. Refetch the attempt."
+  }
+}

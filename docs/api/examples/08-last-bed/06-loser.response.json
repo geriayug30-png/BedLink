@@ -1,0 +1,7 @@
+{
+  "serverTime": "2026-10-02T10:00:41Z",
+  "error": {
+    "code": "CAPACITY_UNAVAILABLE",
+    "message": "Another hold consumed the last available bed. Reject or wait for timeout."
+  }
+}

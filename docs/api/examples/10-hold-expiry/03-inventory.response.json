@@ -1,0 +1,41 @@
+{
+  "serverTime": "2026-10-02T10:15:40Z",
+  "hospital": {
+    "id": "h_demo_cedar",
+    "name": "Cedar Demo Hospital",
+    "location": {
+      "latitude": 12.975,
+      "longitude": 77.605
+    }
+  },
+  "bedPools": [
+    {
+      "id": "p_cedar_critical",
+      "hospitalId": "h_demo_cedar",
+      "label": "ICU + Ventilator + Oxygen",
+      "resources": [
+        "icu",
+        "ventilator",
+        "oxygen"
+      ],
+      "specialties": [
+        "cardiac"
+      ],
+      "capacity": 10,
+      "reportedFreeBeds": 2,
+      "activeHoldCount": 0,
+      "availableBeds": 2,
+      "loadRatio": 0.8,
+      "verifiedAt": "2026-10-02T09:59:00Z",
+      "dataAgeMinutes": 16.666666666666668,
+      "freshness": "aging",
+      "freshnessPolicy": {
+        "policyVersion": "demo-1",
+        "agingAfterMinutes": 10,
+        "staleAfterMinutes": 30
+      },
+      "inventoryUpdatedAt": "2026-10-02T10:15:40Z",
+      "version": 3
+    }
+  ]
+}

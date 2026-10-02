@@ -1,0 +1,56 @@
+{
+  "serverTime": "2026-10-02T10:00:40Z",
+  "attempt": {
+    "id": "att_success",
+    "requestId": "req_success",
+    "hospitalId": "h_demo_cedar",
+    "bedPoolId": "p_cedar_critical",
+    "status": "accepted",
+    "createdAt": "2026-10-02T10:00:10Z",
+    "responseDeadlineAt": "2026-10-02T10:02:10Z",
+    "resolvedAt": "2026-10-02T10:00:40Z",
+    "reasonCode": null
+  },
+  "requestStatus": "held",
+  "hold": {
+    "id": "hold_success",
+    "requestId": "req_success",
+    "attemptId": "att_success",
+    "hospitalId": "h_demo_cedar",
+    "bedPoolId": "p_cedar_critical",
+    "status": "active",
+    "createdAt": "2026-10-02T10:00:40Z",
+    "expiresAt": "2026-10-02T10:15:40Z",
+    "endedAt": null,
+    "endReason": null
+  },
+  "bedPool": {
+    "id": "p_cedar_critical",
+    "hospitalId": "h_demo_cedar",
+    "label": "ICU + Ventilator + Oxygen",
+    "resources": [
+      "icu",
+      "ventilator",
+      "oxygen"
+    ],
+    "specialties": [
+      "cardiac"
+    ],
+    "capacity": 10,
+    "reportedFreeBeds": 2,
+    "activeHoldCount": 1,
+    "availableBeds": 1,
+    "loadRatio": 0.9,
+    "verifiedAt": "2026-10-02T09:59:00Z",
+    "dataAgeMinutes": 1.6666666666666667,
+    "freshness": "fresh",
+    "freshnessPolicy": {
+      "policyVersion": "demo-1",
+      "agingAfterMinutes": 10,
+      "staleAfterMinutes": 30
+    },
+    "inventoryUpdatedAt": "2026-10-02T10:00:40Z",
+    "version": 2
+  },
+  "nextBest": null
+}

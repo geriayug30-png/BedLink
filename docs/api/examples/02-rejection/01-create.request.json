@@ -1,0 +1,15 @@
+{
+  "patientReference": "ANON_REJECT",
+  "needs": {
+    "location": {
+      "latitude": 12.97,
+      "longitude": 77.6
+    },
+    "resources": [
+      "icu",
+      "ventilator",
+      "oxygen"
+    ],
+    "specialty": "cardiac"
+  }
+}

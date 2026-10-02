@@ -1,0 +1,14 @@
+{
+  "serverTime": "2026-10-02T10:00:11Z",
+  "error": {
+    "code": "VERSION_CONFLICT",
+    "message": "The pool changed. Refetch and review the current count and holds.",
+    "details": [
+      {
+        "field": "/version",
+        "code": "MISMATCH",
+        "message": "Expected current version 2; received 1."
+      }
+    ]
+  }
+}
